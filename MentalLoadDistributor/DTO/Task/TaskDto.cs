@@ -1,0 +1,28 @@
+﻿using MentalLoadDistributor.Core.Models;
+using MentalLoadDistributor.DTO.User;
+
+namespace MentalLoadDistributor.DTO.Task
+{
+    public class TaskDto
+    {
+        public Guid Id { get; set; }
+
+        public string Title { get; set; }
+        public string Description { get; set; }
+
+        public int EstimatedMinutes { get; set; }
+
+        public DateTime? DueDate { get; set; }
+
+        public TaskPriority Priority { get; set; }
+
+        public bool IsCompleted { get; set; }
+
+        public UserDto? CreatedBy { get; set; }
+        public UserDto? AssignedTo { get; set; }
+
+        public RecurrenceType Recurrence{ get; set; }
+
+        public List<string> Tags { get; set; } = new();
+    }
+}

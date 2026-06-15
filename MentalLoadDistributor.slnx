@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MentalLoadDistributor.Core/MentalLoadDistributor.Core.csproj" />
+  <Project Path="MentalLoadDistributor.Infrastructure/MentalLoadDistributor.Infrastructure.csproj" />
+  <Project Path="MentalLoadDistributor/MentalLoadDistributor.csproj" />
+</Solution>
