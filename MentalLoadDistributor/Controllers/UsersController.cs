@@ -18,10 +18,12 @@ namespace MentalLoadDistributor.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
+        private readonly ITaskRepository _taskRepository;
 
-        public UsersController(IUserRepository userRepository)
+        public UsersController(IUserRepository userRepository, ITaskRepository taskRepository)
         {
             _userRepository = userRepository;
+            _taskRepository = taskRepository;
         }
 
         [HttpGet("me")]
@@ -51,6 +53,63 @@ namespace MentalLoadDistributor.Controllers
                 user.Skills
             });
         }
+
+        [HttpGet("me/stats")]
+        public async Task<IActionResult> GetMyStats()
+        {
+            var userId = User
+                .FindFirst(ClaimTypes.NameIdentifier)
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var myUserId =
+                Guid.Parse(userId);
+
+            var tasks =
+                await _taskRepository
+                    .GetAllAsync();
+
+            var myTasks = tasks
+                .Where(t =>
+                    t.AssignedToId == myUserId)
+                .ToList();
+
+            var totalTasks =
+                myTasks.Count;
+
+            var completedTasks =
+                myTasks.Count(t =>
+                    t.IsCompleted);
+
+            var pendingTasks =
+                totalTasks -
+                completedTasks;
+
+            var completionRate =
+                totalTasks == 0
+                    ? 0
+                    : Math.Round(
+                        (double)completedTasks /
+                        totalTasks * 100,
+                        1);
+
+            return Ok(new
+            {
+                TotalTasks = totalTasks,
+
+                CompletedTasks =
+                    completedTasks,
+
+                PendingTasks =
+                    pendingTasks,
+
+                CompletionRate =
+                    completionRate
+            });
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
