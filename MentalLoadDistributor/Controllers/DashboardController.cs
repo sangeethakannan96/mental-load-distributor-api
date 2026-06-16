@@ -46,6 +46,18 @@ namespace MentalLoadDistributor.Controllers
             var tasks = await _taskRepository
                 .GetByFamilyIdAsync(currentUser.FamilyId.Value);
 
+            var myActiveTasks = tasks
+                    .Where(t =>
+                    t.AssignedToId == currentUser.Id &&
+                    !t.IsCompleted)
+                    .Select(t => new MyActiveTaskDto
+                    {
+                        Id = t.Id,
+                        Title = t.Title,
+                        Priority = (int)t.Priority,
+                        DueDate = t.DueDate
+                    }).ToList();
+
             var userLoads = tasks
                 .Where(t => t.AssignedTo != null)
                 .GroupBy(t => t.AssignedTo.Name)
@@ -133,6 +145,8 @@ namespace MentalLoadDistributor.Controllers
                 TasksDueToday = dueTodayTasks,
 
                 UrgentTasks = urgentTasks,
+
+                MyActiveTasks = myActiveTasks
             };
 
             return Ok(result);

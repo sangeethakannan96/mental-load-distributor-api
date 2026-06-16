@@ -28,5 +28,7 @@
         public int TasksDueToday { get; set; }
 
         public int UrgentTasks { get; set; }
+
+        public List<MyActiveTaskDto> MyActiveTasks { get; set; } = new();
     }
 }

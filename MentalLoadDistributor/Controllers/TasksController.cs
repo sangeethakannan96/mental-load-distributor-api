@@ -97,8 +97,10 @@ namespace MentalLoadDistributor.Controllers
             {
                 Id = t.Id,
                 Title = t.Title,
+                Description = t.Description,
                 Recurrence = t.Recurrence,
                 Tags = t.Tags,
+                EstimatedMinutes = t.EstimatedMinutes,
 
                 CreatedBy = new UserDto
                 {
