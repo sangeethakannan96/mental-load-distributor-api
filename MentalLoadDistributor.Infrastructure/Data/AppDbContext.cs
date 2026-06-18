@@ -13,6 +13,7 @@ namespace MentalLoadDistributor.Infrastructure.Data
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Family> Families { get; set; } = null!;
         public DbSet<TaskItem> Tasks { get; set; } = null!;
+        public DbSet<FamilyProfile> FamilyProfiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -146,6 +147,11 @@ namespace MentalLoadDistributor.Infrastructure.Data
                     EstimatedMinutes = 20
                 }
             );
+
+            modelBuilder.Entity<FamilyProfile>()
+    .HasOne(fp => fp.Family)
+    .WithMany()
+    .HasForeignKey(fp => fp.FamilyId);
         }
     }
 }

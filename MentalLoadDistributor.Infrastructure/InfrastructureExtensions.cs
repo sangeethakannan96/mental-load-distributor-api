@@ -30,6 +30,7 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddScoped<ITaskRepository, EfTaskRepository>();
             services.AddHttpClient<IAiService, OpenAiService>();
             services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IFamilyProfileRepository, EfFamilyProfileRepository>();
 
             return services;
         }
