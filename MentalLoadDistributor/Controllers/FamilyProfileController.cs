@@ -14,13 +14,16 @@ namespace MentalLoadDistributor.Controllers
     {
         private readonly IFamilyProfileRepository _repository;
         private readonly IUserRepository _userRepository;
+        private readonly ITaskSuggestionService _taskSuggestionService;
 
         public FamilyProfileController(
             IFamilyProfileRepository repository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            ITaskSuggestionService taskSuggestionService)
         {
             _repository = repository;
             _userRepository = userRepository;
+            _taskSuggestionService = taskSuggestionService;
         }
 
 
@@ -152,6 +155,44 @@ namespace MentalLoadDistributor.Controllers
                 profile);
 
             return NoContent();
+        }
+
+
+        [HttpPost("generate-tasks")]
+        public async Task<IActionResult>
+    GenerateTasks()
+        {
+            var userId =
+                User.FindFirst(
+                    ClaimTypes.NameIdentifier)
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var user =
+                await _userRepository
+                    .GetAsync(
+                        Guid.Parse(userId));
+
+            if (user?.FamilyId == null)
+                return BadRequest();
+
+            var profile =
+                await _repository
+                    .GetByFamilyIdAsync(
+                        user.FamilyId.Value);
+
+            if (profile == null)
+                return NotFound();
+
+            var suggestions =
+                await _taskSuggestionService
+                    .GenerateSuggestionsAsync(
+                        profile
+                            .HouseholdDescription);
+
+            return Ok(suggestions);
         }
 
     }
