@@ -15,15 +15,18 @@ namespace MentalLoadDistributor.Controllers
         private readonly IFamilyProfileRepository _repository;
         private readonly IUserRepository _userRepository;
         private readonly ITaskSuggestionService _taskSuggestionService;
+        private readonly ITaskRepository _taskRepository;
 
         public FamilyProfileController(
             IFamilyProfileRepository repository,
             IUserRepository userRepository,
-            ITaskSuggestionService taskSuggestionService)
+            ITaskSuggestionService taskSuggestionService,
+            ITaskRepository taskRepository)
         {
             _repository = repository;
             _userRepository = userRepository;
             _taskSuggestionService = taskSuggestionService;
+            _taskRepository = taskRepository;
         }
 
 
@@ -193,6 +196,84 @@ namespace MentalLoadDistributor.Controllers
                             .HouseholdDescription);
 
             return Ok(suggestions);
+        }
+
+        [HttpPost("approve-suggestions")]
+        public async Task<IActionResult>ApproveSuggestions([FromBody] ApproveSuggestionsRequest request)
+        {
+            var userId =
+                User.FindFirst(
+                    ClaimTypes.NameIdentifier)
+                ?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var currentUser =
+                await _userRepository.GetAsync(
+                    Guid.Parse(userId));
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            foreach (var suggestion
+                in request.Suggestions)
+            {
+                var recurrence =
+                    suggestion.Recurrence switch
+                    {
+                        "Daily" =>
+                            RecurrenceType.Daily,
+
+                        "Weekly" =>
+                            RecurrenceType.Weekly,
+
+                        "Monthly" =>
+                            RecurrenceType.Monthly,
+
+                        _ =>
+                            RecurrenceType.None
+                    };
+
+                var task =
+                    new TaskItem
+                    {
+                        Title =
+                            suggestion.Title,
+
+                        Description =
+                            suggestion.Description,
+
+                        CreatedById =
+                            currentUser.Id,
+
+                        Priority =
+                            TaskPriority.Medium,
+
+                        IsCompleted =
+                            false,
+
+                        EstimatedMinutes =
+                            30,
+
+                        EmotionalLoadEstimate =
+                            suggestion.EmotionalLoad,
+
+                        Recurrence =
+                            recurrence,
+
+                        Tags =
+                            new List<string>
+                            {
+                        suggestion.Category
+                            }
+                    };
+
+                await _taskRepository
+                    .AddAsync(task);
+            }
+
+            return Ok();
         }
 
     }
