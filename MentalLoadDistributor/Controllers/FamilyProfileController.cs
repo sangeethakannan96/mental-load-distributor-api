@@ -3,6 +3,7 @@ using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.DTO.FamilyProfile;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualBasic;
 using System.Security.Claims;
 
 namespace MentalLoadDistributor.Controllers
@@ -247,14 +248,15 @@ namespace MentalLoadDistributor.Controllers
                         CreatedById =
                             currentUser.Id,
 
-                        Priority =
-                            TaskPriority.Medium,
+                        DueDate = suggestion.StartDate,
+
+                        Priority = suggestion.Priority,
+                            
 
                         IsCompleted =
                             false,
 
-                        EstimatedMinutes =
-                            30,
+                        EstimatedMinutes = suggestion.EstimatedMinutes,
 
                         EmotionalLoadEstimate =
                             suggestion.EmotionalLoad,

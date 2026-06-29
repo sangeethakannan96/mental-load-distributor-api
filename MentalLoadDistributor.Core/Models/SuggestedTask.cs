@@ -10,8 +10,14 @@
 
         public string Recurrence { get; set; }
 
+        public DateTime? StartDate { get; set; }
+
         public string SuggestedAssigneeRole { get; set; }
 
         public int EmotionalLoad { get; set; }
+
+        public int EstimatedMinutes { get; set; }
+
+        public TaskPriority Priority { get; set; }
     }
 }

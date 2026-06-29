@@ -47,16 +47,23 @@ namespace MentalLoadDistributor.Controllers
                 .GetByFamilyIdAsync(currentUser.FamilyId.Value);
 
             var myActiveTasks = tasks
-                    .Where(t =>
-                    t.AssignedToId == currentUser.Id &&
-                    !t.IsCompleted)
-                    .Select(t => new MyActiveTaskDto
-                    {
-                        Id = t.Id,
-                        Title = t.Title,
-                        Priority = (int)t.Priority,
-                        DueDate = t.DueDate
-                    }).ToList();
+                .Where(t =>
+                t.AssignedToId == currentUser.Id &&
+                !t.IsCompleted &&
+                (
+                !t.DueDate.HasValue ||
+                t.DueDate.Value.Date <= DateTime.Today
+                ))
+                .OrderBy(t => t.DueDate ?? DateTime.MaxValue)
+                .ThenByDescending(t => t.Priority)
+                .Select(t => new MyActiveTaskDto
+                {
+                Id = t.Id,
+                Title = t.Title,
+                Priority = (int)t.Priority,
+                DueDate = t.DueDate
+                })
+                .ToList();
 
             var userLoads = tasks
                 .Where(t => t.AssignedTo != null)

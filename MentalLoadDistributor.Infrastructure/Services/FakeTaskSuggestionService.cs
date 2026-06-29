@@ -36,7 +36,13 @@ namespace MentalLoadDistributor.Infrastructure.Services
                         "Mom",
 
                     EmotionalLoad =
-                        20
+                        20,
+
+                    StartDate = DateTime.UtcNow.Date,
+
+                    EstimatedMinutes = 30,
+
+                    Priority = TaskPriority.Medium
                 },
 
                 new()
@@ -57,7 +63,13 @@ namespace MentalLoadDistributor.Infrastructure.Services
                         "Dad",
 
                     EmotionalLoad =
-                        30
+                        30,
+
+                    StartDate = DateTime.UtcNow.Date,
+
+                    EstimatedMinutes = 30,
+
+                    Priority = TaskPriority.Medium
                 }
                 };
 
