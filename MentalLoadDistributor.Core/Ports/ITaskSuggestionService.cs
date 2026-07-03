@@ -1,5 +1,4 @@
-﻿
-using MentalLoadDistributor.Core.Models;
+﻿using MentalLoadDistributor.Core.Models.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,11 @@ namespace MentalLoadDistributor.Core.Ports
     public interface ITaskSuggestionService
     {
         Task<List<SuggestedTask>>
-            GenerateSuggestionsAsync(
+            GenerateHouseholdSuggestionsAsync(
                 string householdDescription);
+
+        Task<List<SuggestedTask>> GenerateTaskSuggestionsAsync(
+    string prompt);
+
     }
 }

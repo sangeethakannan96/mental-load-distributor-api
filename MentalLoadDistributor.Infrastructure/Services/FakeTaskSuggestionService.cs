@@ -1,4 +1,5 @@
 ﻿using MentalLoadDistributor.Core.Models;
+using MentalLoadDistributor.Core.Models.AI;
 using MentalLoadDistributor.Core.Ports;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace MentalLoadDistributor.Infrastructure.Services
     : ITaskSuggestionService
     {
         public Task<List<SuggestedTask>>
-            GenerateSuggestionsAsync(
+            GenerateHouseholdSuggestionsAsync(
                 string householdDescription)
         {
             var result =
@@ -75,6 +76,63 @@ namespace MentalLoadDistributor.Infrastructure.Services
 
             return Task.FromResult(
                 result);
+        }
+
+
+        public Task<List<SuggestedTask>> GenerateTaskSuggestionsAsync(string prompt)
+        {
+            // TODO:
+            // Replace this with Azure OpenAI implementation.
+            // For now we ignore the prompt and return sample tasks.
+
+            var suggestions = new List<SuggestedTask>
+    {
+        new SuggestedTask
+        {
+            Title = "Buy Groceries",
+            Description = "Purchase groceries for the upcoming event.",
+            Category = "Shopping",
+            EmotionalLoad = 20,
+            Recurrence = "None",
+            SuggestedAssigneeRole = "Dad",
+            StartDate = DateTime.UtcNow.Date
+        },
+
+        new SuggestedTask
+        {
+            Title = "Clean Living Room",
+            Description = "Vacuum and organize the living room.",
+            Category = "Cleaning",
+            EmotionalLoad = 40,
+            Recurrence = "None",
+            SuggestedAssigneeRole = "Mom",
+            StartDate = DateTime.UtcNow.Date
+        },
+
+        new SuggestedTask
+        {
+            Title = "Buy Birthday Cake",
+            Description = "Order or purchase a birthday cake.",
+            Category = "Shopping",
+            EmotionalLoad = 10,
+            Recurrence = "None",
+            SuggestedAssigneeRole = "Dad",
+            StartDate = DateTime.UtcNow.Date
+        },
+
+        new SuggestedTask
+        {
+            Title = "Prepare Dinner",
+            Description = "Prepare dinner for the family.",
+            Category = "Cooking",
+            EmotionalLoad = 50,
+            Recurrence = "None",
+            SuggestedAssigneeRole = "Mom",
+            StartDate = DateTime.UtcNow.Date
+        }
+    };
+
+            return Task.FromResult(suggestions);
         }
     }
 }

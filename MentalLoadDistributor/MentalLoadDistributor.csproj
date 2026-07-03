@@ -20,7 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTO\AI\" />
     <Folder Include="Services\" />
   </ItemGroup>
 
