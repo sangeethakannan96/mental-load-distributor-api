@@ -1,5 +1,5 @@
 using Humanizer;
-using MentalLoadDistributor.Core.Models;
+using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.DTO.Family;
 using MentalLoadDistributor.DTO.User;

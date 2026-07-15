@@ -1,5 +1,5 @@
-﻿using MentalLoadDistributor.Core.Models;
-using MentalLoadDistributor.Core.Models.AI;
+﻿using MentalLoadDistributor.Core.Domain.Models;
+using MentalLoadDistributor.Core.Domain.Models.AI;
 using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.DTO;
 using MentalLoadDistributor.Infrastructure.Repositories;
@@ -13,21 +13,28 @@ namespace MentalLoadDistributor.Controllers
     public class AiController : ControllerBase
     {
         private readonly IAiService _aiService;
-        private readonly ITaskSuggestionService _taskSuggestionService;
+        private readonly IPlanningService _mockPlanningService;
         private readonly IFamilyProfileRepository _familyProfileRepository;
         private readonly ITaskRepository _taskRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IReflectionService _reflectionService;
+        private readonly IReflectionRepository _reflectionRepository;
+        
 
         public AiController(IAiService aiService,
             IFamilyProfileRepository familyprofileRepository,
-            ITaskSuggestionService taskSuggestionService,
+            IPlanningService mockPlanningService,
             ITaskRepository taskRepository,
+            IReflectionService reflectionService,
+            IReflectionRepository reflectionRepository,
             IUserRepository userRepository)
         {
             _aiService = aiService;
-            _taskSuggestionService = taskSuggestionService;
+            _mockPlanningService = mockPlanningService;
             _taskRepository = taskRepository;
             _userRepository = userRepository;
+            _reflectionService = reflectionService;
+            _reflectionRepository = reflectionRepository;
             _familyProfileRepository = familyprofileRepository;
         }
 
@@ -42,9 +49,9 @@ namespace MentalLoadDistributor.Controllers
             return Ok(result);
         }
 
-        [HttpPost("generate-household-suggestions")]
+        [HttpPost("generate-household-plan")]
         public async Task<IActionResult>
-   GenerateHouseholdSuggestions()
+   GenerateHouseholdPlan()
         {
             var userId =
                 User.FindFirst(
@@ -71,8 +78,8 @@ namespace MentalLoadDistributor.Controllers
                 return NotFound();
 
             var suggestions =
-                await _taskSuggestionService
-                    .GenerateHouseholdSuggestionsAsync(
+                await _mockPlanningService
+                    .GenerateHouseholdPlanAsync(
                         profile
                             .HouseholdDescription);
 
@@ -80,8 +87,8 @@ namespace MentalLoadDistributor.Controllers
         }
 
 
-        [HttpPost("generate-task-suggestions")]
-        public async Task<IActionResult> GenerateTaskSuggestions(
+        [HttpPost("generate-event-plan")]
+        public async Task<IActionResult> GenerateEventPlan(
     [FromBody] GenerateTaskSuggestionsRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Prompt))
@@ -90,8 +97,56 @@ namespace MentalLoadDistributor.Controllers
             }
 
             var suggestions =
-                await _taskSuggestionService
-                    .GenerateTaskSuggestionsAsync(request.Prompt);
+                await _mockPlanningService
+                    .GenerateEventPlanAsync(request.Prompt);
+
+            return Ok(suggestions);
+        }
+
+        [HttpPost("generate-daily-plan")]
+        public async Task<IActionResult> GenerateDailyPlan(
+    [FromBody] GenerateDailyPlanRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Prompt))
+            {
+                return BadRequest("Please describe what's happening today.");
+            }
+
+            var suggestions = await _mockPlanningService
+                .GenerateDailyPlanAsync(request.Prompt);
+
+            return Ok(suggestions);
+        }
+
+        [HttpPost("generate-weekly-plan")]
+        public async Task<IActionResult> GenerateWeeklyPlan(
+     [FromBody] GenerateWeeklyPlanRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Prompt))
+            {
+                return BadRequest(
+                    "Please describe what's happening this week.");
+            }
+
+            var suggestions = await _mockPlanningService
+                .GenerateWeeklyPlanAsync(request.Prompt);
+
+            return Ok(suggestions);
+        }
+
+
+        [HttpPost("generate-monthly-plan")]
+        public async Task<IActionResult> GenerateMonthlyPlan(
+    [FromBody] GenerateMonthlyPlanRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Prompt))
+            {
+                return BadRequest(
+                    "Please describe what's happening this month.");
+            }
+
+            var suggestions = await _mockPlanningService
+                .GenerateMonthlyPlanAsync(request.Prompt);
 
             return Ok(suggestions);
         }
@@ -176,6 +231,88 @@ namespace MentalLoadDistributor.Controllers
             return Ok();
         }
 
-    
-}
+
+        [HttpPost("analyze-reflection")]
+        public async Task<IActionResult> AnalyzeReflection(
+    [FromBody] AnalyzeReflectionRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Content))
+            {
+                return BadRequest(
+                    "Please enter your reflection.");
+            }
+
+            var userId = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var currentUser = await _userRepository.GetAsync(
+                Guid.Parse(userId));
+
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            if (currentUser.FamilyId == null)
+            {
+                return BadRequest(
+                    "You must belong to a family before adding a reflection.");
+            }
+
+            var analysis = await _reflectionService
+                .AnalyzeReflectionAsync(request.Content);
+
+            var reflection = new DailyReflection
+            {
+                Id = Guid.NewGuid(),
+
+                UserId = currentUser.Id,
+
+                FamilyId = currentUser.FamilyId.Value,
+
+                ReflectionDate = DateTime.UtcNow.Date,
+
+                Content = request.Content,
+
+                CreatedAt = DateTime.UtcNow,
+
+                Summary = analysis.Summary,
+
+                Activities = analysis.Activities
+                    .Select(activity => new ActivityLog
+                    {
+                        Id = Guid.NewGuid(),
+
+                        UserId = currentUser.Id,
+
+                        Title = activity.Title,
+
+                        Description = activity.Description,
+
+                        Category = activity.Category,
+
+                        EstimatedMinutes =
+                            activity.EstimatedMinutes,
+
+                        MentalLoadScore =
+                            activity.MentalLoadScore,
+
+                        ActivityDate = DateTime.UtcNow.Date
+                    })
+                    .ToList()
+            };
+
+            await _reflectionRepository.AddAsync(
+                reflection);
+
+            return Ok(analysis);
+        }
+
+
+    }
 }

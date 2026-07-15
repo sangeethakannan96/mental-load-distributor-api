@@ -1,8 +1,8 @@
-    using System;
-    using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-    namespace MentalLoadDistributor.Core.Models
+namespace MentalLoadDistributor.Core.Domain.Models
     {
         public enum ParentRole
         {

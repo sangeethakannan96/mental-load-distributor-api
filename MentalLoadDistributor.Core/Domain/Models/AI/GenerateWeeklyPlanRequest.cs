@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MentalLoadDistributor.Core.Models.AI
+namespace MentalLoadDistributor.Core.Domain.Models.AI
 {
-    public class GenerateTaskSuggestionsRequest
+    public class GenerateWeeklyPlanRequest
     {
         public string Prompt { get; set; } = string.Empty;
     }

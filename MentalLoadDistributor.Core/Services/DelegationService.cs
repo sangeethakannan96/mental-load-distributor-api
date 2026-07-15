@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MentalLoadDistributor.Core.Models;
-
+using MentalLoadDistributor.Core.Domain.Models;
 
 namespace MentalLoadDistributor.Core.Services
 {

@@ -31,7 +31,9 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddHttpClient<IAiService, OpenAiService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IFamilyProfileRepository, EfFamilyProfileRepository>();
-            services.AddScoped<ITaskSuggestionService, FakeTaskSuggestionService>();
+            services.AddScoped<IPlanningService, MockPlanningService>();
+            services.AddScoped<IReflectionRepository,EfReflectionRepository>();
+            services.AddScoped<IReflectionService,FakeReflectionService>();
 
             return services;
         }

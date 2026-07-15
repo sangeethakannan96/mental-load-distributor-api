@@ -1,4 +1,4 @@
-﻿using MentalLoadDistributor.Core.Models;
+﻿using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.DTO.Dashboards;
 using MentalLoadDistributor.Infrastructure.Repositories;

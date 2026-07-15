@@ -1,4 +1,6 @@
-﻿namespace MentalLoadDistributor.Core.Models.AI
+﻿using MentalLoadDistributor.Core.Domain.Models;
+
+namespace MentalLoadDistributor.Core.Domain.Models.AI
 {
     public class SuggestedTask
     {

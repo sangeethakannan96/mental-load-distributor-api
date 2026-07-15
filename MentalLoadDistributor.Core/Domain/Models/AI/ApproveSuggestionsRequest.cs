@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MentalLoadDistributor.Core.Models.AI
+namespace MentalLoadDistributor.Core.Domain.Models.AI
 {
     public class ApproveSuggestionsRequest
     {

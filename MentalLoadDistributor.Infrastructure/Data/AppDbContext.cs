@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using MentalLoadDistributor.Core.Models;
 using System.Text.Json;
+using MentalLoadDistributor.Core.Domain.Models;
 
 namespace MentalLoadDistributor.Infrastructure.Data
 {
@@ -14,6 +14,10 @@ namespace MentalLoadDistributor.Infrastructure.Data
         public DbSet<Family> Families { get; set; } = null!;
         public DbSet<TaskItem> Tasks { get; set; } = null!;
         public DbSet<FamilyProfile> FamilyProfiles { get; set; }
+
+        public DbSet<DailyReflection> DailyReflections { get; set; }
+
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -152,6 +156,32 @@ namespace MentalLoadDistributor.Infrastructure.Data
     .HasOne(fp => fp.Family)
     .WithMany()
     .HasForeignKey(fp => fp.FamilyId);
+
+
+            modelBuilder.Entity<DailyReflection>()
+    .HasOne(r => r.User)
+    .WithMany()
+    .HasForeignKey(r => r.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DailyReflection>()
+                .HasOne(r => r.Family)
+                .WithMany()
+                .HasForeignKey(r => r.FamilyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DailyReflection>()
+                .HasMany(r => r.Activities)
+                .WithOne(a => a.DailyReflection)
+                .HasForeignKey(a => a.DailyReflectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            modelBuilder.Entity<ActivityLog>()
+    .HasOne(a => a.User)
+    .WithMany()
+    .HasForeignKey(a => a.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

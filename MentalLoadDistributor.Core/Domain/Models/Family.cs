@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace MentalLoadDistributor.Core.Models
+namespace MentalLoadDistributor.Core.Domain.Models
 {
     public class Family
     {

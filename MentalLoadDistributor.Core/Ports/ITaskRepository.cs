@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MentalLoadDistributor.Core.Models;
+using MentalLoadDistributor.Core.Domain.Models;
 
 namespace MentalLoadDistributor.Core.Ports
 {

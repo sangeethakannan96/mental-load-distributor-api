@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MentalLoadDistributor.Core.Models;
+using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;

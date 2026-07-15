@@ -1,4 +1,4 @@
-﻿using MentalLoadDistributor.Core.Models;
+﻿using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.DTO.User;
 
 namespace MentalLoadDistributor.DTO.Task
