@@ -9,6 +9,7 @@ using System;
 using System.Data;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using TaskStatus = MentalLoadDistributor.Core.Domain.Enums.TaskStatus;
 
 namespace MentalLoadDistributor.Controllers
 {
@@ -54,7 +55,8 @@ namespace MentalLoadDistributor.Controllers
             });
         }
 
-        [HttpGet("me/stats")]
+        
+        [HttpGet("my-stats")]
         public async Task<IActionResult> GetMyStats()
         {
             var userId = User
@@ -64,28 +66,30 @@ namespace MentalLoadDistributor.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
-            var myUserId =
-                Guid.Parse(userId);
+            var myUserId = Guid.Parse(userId);
 
-            var tasks =
-                await _taskRepository
-                    .GetAllAsync();
+            var tasks = await _taskRepository.GetAllAsync();
 
             var myTasks = tasks
-                .Where(t =>
-                    t.AssignedToId == myUserId)
+                .Where(t => t.AssignedToId == myUserId)
                 .ToList();
 
-            var totalTasks =
-                myTasks.Count;
+            var totalTasks = myTasks.Count;
 
-            var completedTasks =
-                myTasks.Count(t =>
-                    t.IsCompleted);
+            var completedTasks = myTasks.Count(t =>
+                t.Status == TaskStatus.Completed);
 
-            var pendingTasks =
-                totalTasks -
-                completedTasks;
+            var pendingTasks = myTasks.Count(t =>
+                t.Status == TaskStatus.Pending);
+
+            var inProgressTasks = myTasks.Count(t =>
+                t.Status == TaskStatus.InProgress);
+
+            var deferredTasks = myTasks.Count(t =>
+                t.Status == TaskStatus.Deferred);
+
+            var cancelledTasks = myTasks.Count(t =>
+                t.Status == TaskStatus.Cancelled);
 
             var completionRate =
                 totalTasks == 0
@@ -99,17 +103,19 @@ namespace MentalLoadDistributor.Controllers
             {
                 TotalTasks = totalTasks,
 
-                CompletedTasks =
-                    completedTasks,
+                CompletedTasks = completedTasks,
 
-                PendingTasks =
-                    pendingTasks,
+                PendingTasks = pendingTasks,
 
-                CompletionRate =
-                    completionRate
+                InProgressTasks = inProgressTasks,
+
+                DeferredTasks = deferredTasks,
+
+                CancelledTasks = cancelledTasks,
+
+                CompletionRate = completionRate
             });
         }
-
 
         [HttpGet]
         public async Task<IActionResult> GetAll()

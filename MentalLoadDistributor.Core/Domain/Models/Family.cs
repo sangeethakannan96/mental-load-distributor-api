@@ -11,5 +11,7 @@ namespace MentalLoadDistributor.Core.Domain.Models
         public List<User> Members { get; set; } = new();
 
         public Dictionary<string, string> Preferences { get; set; } = new();
+
+        public List<TaskItem> Tasks { get; set; } = new();
     }
 }

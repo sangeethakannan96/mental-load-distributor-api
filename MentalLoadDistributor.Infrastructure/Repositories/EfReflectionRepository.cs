@@ -69,5 +69,34 @@ namespace MentalLoadDistributor.Infrastructure.Repositories
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
         }
+
+        public async Task<List<DailyReflection>> GetByFamilyAsync(
+    Guid familyId)
+        {
+            return await _context
+                .DailyReflections
+                .Include(r => r.User)
+                .Include(r => r.Activities)
+                .Where(r => r.FamilyId == familyId)
+                .OrderByDescending(r => r.ReflectionDate)
+                .ToListAsync();
+        }
+
+        public async Task<List<DailyReflection>> GetByFamilyAsync(
+    Guid familyId,
+    DateTime startDate,
+    DateTime endDate)
+        {
+            return await _context
+                .DailyReflections
+                .Include(r => r.User)
+                .Include(r => r.Activities)
+                .Where(r =>
+                    r.FamilyId == familyId &&
+                    r.ReflectionDate >= startDate &&
+                    r.ReflectionDate < endDate)
+                .OrderByDescending(r => r.ReflectionDate)
+                .ToListAsync();
+        }
     }
 }

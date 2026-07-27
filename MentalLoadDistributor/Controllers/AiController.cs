@@ -1,10 +1,12 @@
-﻿using MentalLoadDistributor.Core.Domain.Models;
+﻿using MentalLoadDistributor.Core.Domain.Enums;
+using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.Core.Domain.Models.AI;
 using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.DTO;
 using MentalLoadDistributor.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TaskStatus = MentalLoadDistributor.Core.Domain.Enums.TaskStatus;
 
 namespace MentalLoadDistributor.Controllers
 {
@@ -206,12 +208,19 @@ namespace MentalLoadDistributor.Controllers
                         Priority = suggestion.Priority,
 
 
-                        IsCompleted =
-                            false,
+                        Status = TaskStatus.Pending,
+                        CreatedAt = DateTime.UtcNow,
+                        FamilyId = currentUser.FamilyId!.Value,
+                        Category = Enum.TryParse<TaskCategory>(
+                                    suggestion.Category,
+                                    true,
+                                    out var category)
+                                    ? category
+                                    : TaskCategory.Other,
 
                         EstimatedMinutes = suggestion.EstimatedMinutes,
 
-                        EmotionalLoadEstimate =
+                        MentalLoadEstimate =
                             suggestion.EmotionalLoad,
 
                         Recurrence =
@@ -302,7 +311,7 @@ namespace MentalLoadDistributor.Controllers
                         MentalLoadScore =
                             activity.MentalLoadScore,
 
-                        ActivityDate = DateTime.UtcNow.Date
+                        OccurredAt = DateTime.UtcNow.Date
                     })
                     .ToList()
             };

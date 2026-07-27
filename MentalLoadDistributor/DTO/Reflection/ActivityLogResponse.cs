@@ -16,6 +16,6 @@ namespace MentalLoadDistributor.DTO.Reflection
 
         public int MentalLoadScore { get; set; }
 
-        public DateTime ActivityDate { get; set; }
+        public DateTime OccuredAt { get; set; }
     }
 }

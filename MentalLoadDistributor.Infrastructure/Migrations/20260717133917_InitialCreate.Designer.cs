@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MentalLoadDistributor.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260715121525_AddSummaryToDailyReflection")]
-    partial class AddSummaryToDailyReflection
+    [Migration("20260717133917_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -179,6 +179,9 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                     b.Property<int>("EstimatedMinutes")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 
@@ -206,6 +209,8 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
 
                     b.HasIndex("CreatedById");
 
+                    b.HasIndex("FamilyId");
+
                     b.ToTable("Tasks");
 
                     b.HasData(
@@ -216,6 +221,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                             CreatedById = new Guid("22222222-2222-2222-2222-222222222222"),
                             EmotionalLoadEstimate = 30,
                             EstimatedMinutes = 45,
+                            FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),
                             IsCompleted = false,
                             Metadata = "{}",
                             Priority = 1,
@@ -229,6 +235,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                             CreatedById = new Guid("33333333-3333-3333-3333-333333333333"),
                             EmotionalLoadEstimate = 70,
                             EstimatedMinutes = 20,
+                            FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),
                             IsCompleted = false,
                             Metadata = "{}",
                             Priority = 2,
@@ -355,9 +362,17 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.Family", "Family")
+                        .WithMany("Tasks")
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("AssignedTo");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Family");
                 });
 
             modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.User", b =>
@@ -378,6 +393,8 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
             modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.Family", b =>
                 {
                     b.Navigation("Members");
+
+                    b.Navigation("Tasks");
                 });
 #pragma warning restore 612, 618
         }

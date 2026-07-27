@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MentalLoadDistributor.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260618105825_AddFamilyProfile")]
-    partial class AddFamilyProfile
+    [Migration("20260720131152_UpdateTaskStatusAndCategory")]
+    partial class UpdateTaskStatusAndCategory
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,84 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.Family", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.ActivityLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("DailyReflectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EstimatedMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MentalLoadScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("WasPlanned")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyReflectionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityLogs");
+                });
+
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.DailyReflection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ReflectionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DailyReflections");
+                });
+
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.Family", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -52,7 +129,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.FamilyProfile", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.FamilyProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -78,7 +155,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                     b.ToTable("FamilyProfiles");
                 });
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.TaskItem", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.TaskItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -86,6 +163,15 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
 
                     b.Property<Guid?>("AssignedToId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("uniqueidentifier");
@@ -96,14 +182,14 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("EmotionalLoadEstimate")
-                        .HasColumnType("int");
-
                     b.Property<int>("EstimatedMinutes")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MentalLoadEstimate")
+                        .HasColumnType("int");
 
                     b.Property<string>("Metadata")
                         .IsRequired()
@@ -115,6 +201,9 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                     b.Property<int>("Recurrence")
                         .HasColumnType("int");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<string>("Tags")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -123,11 +212,18 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedToId");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Tasks");
 
@@ -136,32 +232,38 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                         {
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             AssignedToId = new Guid("33333333-3333-3333-3333-333333333333"),
+                            Category = 9,
+                            CreatedAt = new DateTime(2026, 7, 20, 13, 11, 52, 235, DateTimeKind.Utc).AddTicks(7218),
                             CreatedById = new Guid("22222222-2222-2222-2222-222222222222"),
-                            EmotionalLoadEstimate = 30,
                             EstimatedMinutes = 45,
-                            IsCompleted = false,
+                            FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            MentalLoadEstimate = 30,
                             Metadata = "{}",
                             Priority = 1,
                             Recurrence = 0,
+                            Status = 0,
                             Tags = "[]",
                             Title = "Buy groceries"
                         },
                         new
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
+                            Category = 9,
+                            CreatedAt = new DateTime(2026, 7, 20, 13, 11, 52, 235, DateTimeKind.Utc).AddTicks(7229),
                             CreatedById = new Guid("33333333-3333-3333-3333-333333333333"),
-                            EmotionalLoadEstimate = 70,
                             EstimatedMinutes = 20,
-                            IsCompleted = false,
+                            FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),
+                            MentalLoadEstimate = 70,
                             Metadata = "{}",
                             Priority = 2,
                             Recurrence = 0,
+                            Status = 0,
                             Tags = "[]",
                             Title = "Doctor appointment"
                         });
                 });
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.User", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -216,9 +318,47 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.FamilyProfile", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.ActivityLog", b =>
                 {
-                    b.HasOne("MentalLoadDistributor.Core.Models.Family", "Family")
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.DailyReflection", "DailyReflection")
+                        .WithMany("Activities")
+                        .HasForeignKey("DailyReflectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DailyReflection");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.DailyReflection", b =>
+                {
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.Family", "Family")
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Family");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.FamilyProfile", b =>
+                {
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.Family", "Family")
                         .WithMany()
                         .HasForeignKey("FamilyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -227,27 +367,39 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                     b.Navigation("Family");
                 });
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.TaskItem", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.TaskItem", b =>
                 {
-                    b.HasOne("MentalLoadDistributor.Core.Models.User", "AssignedTo")
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.User", "AssignedTo")
                         .WithMany()
                         .HasForeignKey("AssignedToId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("MentalLoadDistributor.Core.Models.User", "CreatedBy")
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.User", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.Family", "Family")
+                        .WithMany("Tasks")
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.User", null)
+                        .WithMany("AssignedTasks")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("AssignedTo");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Family");
                 });
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.User", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.User", b =>
                 {
-                    b.HasOne("MentalLoadDistributor.Core.Models.Family", "Family")
+                    b.HasOne("MentalLoadDistributor.Core.Domain.Models.Family", "Family")
                         .WithMany("Members")
                         .HasForeignKey("FamilyId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -255,9 +407,21 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                     b.Navigation("Family");
                 });
 
-            modelBuilder.Entity("MentalLoadDistributor.Core.Models.Family", b =>
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.DailyReflection", b =>
+                {
+                    b.Navigation("Activities");
+                });
+
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.Family", b =>
                 {
                     b.Navigation("Members");
+
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.User", b =>
+                {
+                    b.Navigation("AssignedTasks");
                 });
 #pragma warning restore 612, 618
         }

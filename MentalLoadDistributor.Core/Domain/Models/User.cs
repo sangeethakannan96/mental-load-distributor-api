@@ -27,5 +27,8 @@ namespace MentalLoadDistributor.Core.Domain.Models
         public Family Family { get; set; }
 
         public List<string> Skills { get; set; } = new();
-    }
+
+        public ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
+    
+}
 }

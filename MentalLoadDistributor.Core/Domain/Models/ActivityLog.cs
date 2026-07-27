@@ -17,6 +17,8 @@ namespace MentalLoadDistributor.Core.Domain.Models
 
         public Guid UserId { get; set; }
 
+        public User User { get; set; } = null!;
+
         public string Title { get; set; } = string.Empty;
 
         public string? Description { get; set; }
@@ -29,8 +31,6 @@ namespace MentalLoadDistributor.Core.Domain.Models
 
         public bool WasPlanned { get; set; }
 
-        public DateTime ActivityDate { get; set; }
-
-        public User User { get; set; } = null!;
+        public DateTime OccurredAt { get; set; }
     }
 }

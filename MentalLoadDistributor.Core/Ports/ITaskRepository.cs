@@ -13,5 +13,10 @@ namespace MentalLoadDistributor.Core.Ports
         Task AddAsync(TaskItem task);
         Task UpdateAsync(TaskItem task);
         Task RemoveAsync(Guid id);
+
+        Task<List<TaskItem>> GetByFamilyIdAsync(
+    Guid familyId,
+    DateTime startDate,
+    DateTime endDate);
     }
 }

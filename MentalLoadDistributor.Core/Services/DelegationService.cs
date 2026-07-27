@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MentalLoadDistributor.Core.Domain.Models;
+using TaskStatus = MentalLoadDistributor.Core.Domain.Enums.TaskStatus;
 
 namespace MentalLoadDistributor.Core.Services
 {
@@ -20,8 +21,10 @@ namespace MentalLoadDistributor.Core.Services
 
                     // 🔥 Workload = total pending minutes
                     Workload = allTasks
-                        .Where(t => t.AssignedToId == m.Id && !t.IsCompleted)
-                        .Sum(t => t.EstimatedMinutes),
+    .Where(t => t.AssignedToId == m.Id &&
+                t.Status != TaskStatus.Completed &&
+                t.Status != TaskStatus.Cancelled)
+    .Sum(t => t.EstimatedMinutes),
 
                     // 🔥 Skill match
                     SkillScore = (task.Tags != null && task.Tags.Any())
@@ -50,7 +53,7 @@ namespace MentalLoadDistributor.Core.Services
             }
 
             // 4️⃣ Emotional load balancing
-            if (task.EmotionalLoadEstimate > 50)
+            if (task.MentalLoadEstimate > 50)
             {
                 var dad = candidates
                     .Where(c => c.Member.Role == ParentRole.Dad)
@@ -103,8 +106,10 @@ namespace MentalLoadDistributor.Core.Services
 
                     // 🔥 Workload = total pending minutes
                     Workload = allTasks
-                        .Where(t => t.AssignedToId == m.Id && !t.IsCompleted)
-                        .Sum(t => t.EstimatedMinutes),
+    .Where(t => t.AssignedToId == m.Id &&
+                t.Status != TaskStatus.Completed &&
+                t.Status != TaskStatus.Cancelled)
+    .Sum(t => t.EstimatedMinutes),
 
                     // 🔥 Skill match
                     SkillScore = (task.Tags != null && task.Tags.Any())
@@ -152,7 +157,7 @@ namespace MentalLoadDistributor.Core.Services
             }
 
             // 4️⃣ Emotional load balancing
-            if (task.EmotionalLoadEstimate > 50)
+            if (task.MentalLoadEstimate > 50)
             {
                 var dad = candidates
                     .Where(c => c.Member.Role == ParentRole.Dad)

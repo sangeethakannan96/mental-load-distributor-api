@@ -19,5 +19,12 @@ namespace MentalLoadDistributor.Core.Ports
             Guid userId);
 
         Task<List<DailyReflection>> GetTodayByUserAsync(Guid userId);
+
+        Task<List<DailyReflection>> GetByFamilyAsync(Guid familyId);
+
+        Task<List<DailyReflection>> GetByFamilyAsync(
+    Guid familyId,
+    DateTime startDate,
+    DateTime endDate);
     }
 }

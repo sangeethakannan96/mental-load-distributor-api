@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using TaskStatus = MentalLoadDistributor.Core.Domain.Enums.TaskStatus;
 
 namespace MentalLoadDistributor.Controllers
 {
@@ -61,7 +62,11 @@ namespace MentalLoadDistributor.Controllers
                 Title = t.Title,
                 Description = t.Description,
                 EstimatedMinutes = t.EstimatedMinutes,
-                IsCompleted = t.IsCompleted,
+                Status = t.Status,
+                Category = t.Category,
+                MentalLoadEstimate = t.MentalLoadEstimate,
+                CreatedAt = t.CreatedAt,
+                CompletedAt = t.CompletedAt,
                 DueDate = t.DueDate,
                 Recurrence = t.Recurrence,
                 Priority = t.Priority,
@@ -118,7 +123,11 @@ namespace MentalLoadDistributor.Controllers
                     }
                     : null,
 
-                IsCompleted = t.IsCompleted,
+                Status = t.Status,
+                Category = t.Category,
+                MentalLoadEstimate = t.MentalLoadEstimate,
+                CreatedAt = t.CreatedAt,
+                CompletedAt = t.CompletedAt,
 
                 DueDate = t.DueDate,
 
@@ -150,14 +159,18 @@ namespace MentalLoadDistributor.Controllers
                 Title = dto.Title,
                 Description = dto.Description,
 
+                FamilyId = currentUser.FamilyId!.Value,
+
                 CreatedById = currentUser.Id,
 
                 EstimatedMinutes =
                     dto.EstimatedMinutes,
 
-                EmotionalLoadEstimate =
-                    dto.EmotionalLoadEstimate,
-
+                MentalLoadEstimate =
+                    dto.MentalLoadEstimate,
+                Category = dto.Category,
+                Status = TaskStatus.Pending,
+                CreatedAt = DateTime.UtcNow,
                 Tags = dto.Tags,
 
                 DueDate = dto.DueDate,
@@ -183,8 +196,11 @@ namespace MentalLoadDistributor.Controllers
 
                 Priority = createdTask.Priority,
 
-                IsCompleted =
-                    createdTask.IsCompleted,
+                Status = createdTask.Status,
+                Category = createdTask.Category,
+                MentalLoadEstimate = createdTask.MentalLoadEstimate,
+                CreatedAt = createdTask.CreatedAt,
+                CompletedAt = createdTask.CompletedAt,
 
                 Tags = createdTask.Tags,
 
@@ -216,7 +232,20 @@ namespace MentalLoadDistributor.Controllers
             task.Title = dto.Title;
             task.Description = dto.Description;
             task.EstimatedMinutes = dto.EstimatedMinutes;
-            task.IsCompleted = dto.IsCompleted;
+            task.Status = dto.Status;
+            if (dto.Status == TaskStatus.Completed)
+            {
+                if (task.CompletedAt == null)
+                {
+                    task.CompletedAt = DateTime.UtcNow;
+                }
+            }
+            else
+            {
+                task.CompletedAt = null;
+            }
+            task.Category = dto.Category;
+            task.MentalLoadEstimate = dto.MentalLoadEstimate;
             task.DueDate = dto.DueDate;
             task.Priority = dto.Priority;
             task.Recurrence = dto.Recurrence;
@@ -283,6 +312,14 @@ namespace MentalLoadDistributor.Controllers
             {
                 Id = updatedTask.Id,
                 Title = updatedTask.Title,
+                Description = updatedTask.Description,
+                EstimatedMinutes = updatedTask.EstimatedMinutes,
+                MentalLoadEstimate = updatedTask.MentalLoadEstimate,
+                CreatedAt = updatedTask.CreatedAt,
+                DueDate = updatedTask.DueDate,
+                Priority = updatedTask.Priority,
+                Status = updatedTask.Status,
+                Category = updatedTask.Category,
                 CreatedBy = new UserDto
                 {
                     Id = updatedTask.CreatedBy.Id,
@@ -313,13 +350,14 @@ namespace MentalLoadDistributor.Controllers
             if (task == null)
                 return NotFound();
 
-            if (task.IsCompleted)
+            if (task.Status == TaskStatus.Completed)
             {
                 return BadRequest(
                     "Task already completed");
             }
 
-            task.IsCompleted = true;
+            task.Status = TaskStatus.Completed;
+            task.CompletedAt = DateTime.UtcNow;
 
             if (task.Recurrence != RecurrenceType.None)
             {
@@ -348,23 +386,27 @@ namespace MentalLoadDistributor.Controllers
                     Title = task.Title,
                     Description = task.Description,
 
-                    CreatedById =
-                        task.CreatedById,
+                    FamilyId = task.FamilyId,
 
-                    AssignedToId =
-                        task.AssignedToId,
+                    CreatedById = task.CreatedById,
+
+                    AssignedToId = task.AssignedToId,
+
+                    Category = task.Category,
+
+                    EstimatedMinutes = task.EstimatedMinutes,
+
+                    MentalLoadEstimate = task.MentalLoadEstimate,
 
                     DueDate = nextDueDate,
 
                     Priority = task.Priority,
 
-                    EstimatedMinutes =
-                        task.EstimatedMinutes,
+                    Status = TaskStatus.Pending,
 
-                    EmotionalLoadEstimate =
-                        task.EmotionalLoadEstimate,
+                    CreatedAt = DateTime.UtcNow,
 
-                    Tags = task.Tags,
+                    Tags = new List<string>(task.Tags),
 
                     Recurrence = task.Recurrence
                 };

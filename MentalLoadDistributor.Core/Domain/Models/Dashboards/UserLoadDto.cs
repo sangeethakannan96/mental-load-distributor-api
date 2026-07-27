@@ -1,4 +1,4 @@
-﻿namespace MentalLoadDistributor.DTO.Dashboards
+﻿namespace MentalLoadDistributor.Core.Domain.Models.Dashboards
 {
     public class UserLoadDto
     {

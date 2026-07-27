@@ -1,10 +1,11 @@
+using MentalLoadDistributor.Core.Interfaces;
+using MentalLoadDistributor.Core.Ports;
+using MentalLoadDistributor.Infrastructure.Data;
+using MentalLoadDistributor.Infrastructure.Repositories;
+using MentalLoadDistributor.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MentalLoadDistributor.Core.Ports;
-using MentalLoadDistributor.Infrastructure.Repositories;
-using MentalLoadDistributor.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
-using MentalLoadDistributor.Infrastructure.Services;
 
 namespace MentalLoadDistributor.Infrastructure
 {
@@ -34,6 +35,8 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddScoped<IPlanningService, MockPlanningService>();
             services.AddScoped<IReflectionRepository,EfReflectionRepository>();
             services.AddScoped<IReflectionService,FakeReflectionService>();
+            services.AddScoped<IInsightsService, InsightsService>();
+            services.AddScoped<IDashboardService, DashboardService>();
 
             return services;
         }

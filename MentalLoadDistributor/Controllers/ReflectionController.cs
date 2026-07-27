@@ -51,7 +51,7 @@ namespace MentalLoadDistributor.Controllers
                             Category = activity.Category,
                             EstimatedMinutes = activity.EstimatedMinutes,
                             MentalLoadScore = activity.MentalLoadScore,
-                            ActivityDate = activity.ActivityDate
+                            OccuredAt = activity.OccurredAt
                         })
                         .ToList()
                 })

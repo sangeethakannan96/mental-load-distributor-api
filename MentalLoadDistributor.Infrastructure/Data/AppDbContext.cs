@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using MentalLoadDistributor.Core.Domain.Models;
+using TaskStatus = MentalLoadDistributor.Core.Domain.Enums.TaskStatus;
 
 namespace MentalLoadDistributor.Infrastructure.Data
 {
@@ -89,6 +90,14 @@ namespace MentalLoadDistributor.Infrastructure.Data
                   .WithMany()
                   .HasForeignKey(t => t.AssignedToId)
                   .OnDelete(DeleteBehavior.SetNull);
+
+                eb.HasOne(t => t.Family)
+                  .WithMany(f => f.Tasks)
+                  .HasForeignKey(t => t.FamilyId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+
+
             });
 
             var familyId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -132,22 +141,24 @@ namespace MentalLoadDistributor.Infrastructure.Data
                 {
                     Id = task1Id,
                     Title = "Buy groceries",
+                    FamilyId = familyId,
                     CreatedById = momId,
                     AssignedToId = dadId,
                     Priority = TaskPriority.Medium,
-                    IsCompleted = false,
-                    EmotionalLoadEstimate = 30,
+                    Status = TaskStatus.Pending,
+                    MentalLoadEstimate = 30,
                     EstimatedMinutes = 45
                 },
                 new TaskItem
                 {
                     Id = task2Id,
                     Title = "Doctor appointment",
+                    FamilyId = familyId,
                     CreatedById = dadId,
                     AssignedToId = null,
                     Priority = TaskPriority.High,
-                    IsCompleted = false,
-                    EmotionalLoadEstimate = 70,
+                    Status = TaskStatus.Pending,
+                    MentalLoadEstimate = 70,
                     EstimatedMinutes = 20
                 }
             );
