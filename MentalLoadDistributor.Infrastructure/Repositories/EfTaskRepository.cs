@@ -6,6 +6,7 @@ using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using TaskStatus = MentalLoadDistributor.Core.Domain.Enums.TaskStatus;
 
 namespace MentalLoadDistributor.Infrastructure.Repositories
 {
@@ -79,6 +80,57 @@ namespace MentalLoadDistributor.Infrastructure.Repositories
                     t.DueDate.Value.Date >= startDate.Date &&
                     t.DueDate.Value.Date <= endDate.Date)
                 .OrderBy(t => t.DueDate)
+                .ToListAsync();
+        }
+
+        public async Task<List<TaskItem>> GetMyActiveTasksAsync(Guid userId)
+        {
+            return await _db.Tasks
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Where(t =>
+                    t.AssignedToId == userId &&
+                    t.Status == TaskStatus.Pending &&
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date == DateTime.Today)
+                .OrderBy(t => t.DueDate)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<TaskItem>> GetMyYesterdayReviewTasksAsync(Guid userId)
+        {
+            var today = DateTime.UtcNow.Date;
+
+            return await _db.Tasks
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Where(t =>
+                    t.AssignedToId == userId &&
+                    t.Status == TaskStatus.Pending &&
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date < today)
+                .OrderBy(t => t.DueDate)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<TaskItem>> GetFamilyReviewTasksAsync(Guid familyId)
+        {
+            var today = DateTime.UtcNow.Date;
+
+            return await _db.Tasks
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Where(t =>
+                    t.CreatedBy != null &&
+                    t.CreatedBy.FamilyId == familyId &&
+                    t.Status == TaskStatus.Pending &&
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date < today)
+                .OrderBy(t => t.AssignedTo!.Name)
+                .ThenBy(t => t.DueDate)
+                .AsNoTracking()
                 .ToListAsync();
         }
     }

@@ -37,6 +37,7 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddScoped<IReflectionService,FakeReflectionService>();
             services.AddScoped<IInsightsService, InsightsService>();
             services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<DemoDataSeeder>();
 
             return services;
         }

@@ -95,6 +95,13 @@ if (app.Environment.IsDevelopment())
 
 }
 
+// Seed demo data (runs once if DB empty)
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<MentalLoadDistributor.Infrastructure.Data.DemoDataSeeder>();
+    seeder.SeedAsync().GetAwaiter().GetResult();
+}
+
 app.UseHttpsRedirection();
 
 app.UseCors("AllowAngular");
