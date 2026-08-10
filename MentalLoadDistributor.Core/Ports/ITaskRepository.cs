@@ -18,5 +18,13 @@ namespace MentalLoadDistributor.Core.Ports
     Guid familyId,
     DateTime startDate,
     DateTime endDate);
+
+        Task<List<TaskItem>> GetMyActiveTasksAsync(Guid userId);
+
+        Task<List<TaskItem>> GetMyYesterdayReviewTasksAsync(Guid userId);
+
+        Task<List<TaskItem>> GetFamilyReviewTasksAsync(Guid familyId);
     }
+
+
 }

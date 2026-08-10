@@ -36,7 +36,41 @@ namespace MentalLoadDistributor.Controllers
             _taskBulkActionService = taskBulkActionService;
         }
 
-       
+
+        [Authorize]
+        [HttpGet("my-active")]
+        public async Task<IActionResult> GetMyActiveTasks()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var myUserId = Guid.Parse(userId);
+
+            var tasks = await _taskRepository.GetMyActiveTasksAsync(myUserId);
+
+            return Ok(tasks);
+        }
+
+        [Authorize]
+        [HttpGet("my-yesterday-review")]
+        public async Task<IActionResult> GetMyYesterdayReview()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var myUserId = Guid.Parse(userId);
+
+            var tasks =
+                await _taskRepository.GetMyYesterdayReviewTasksAsync(myUserId);
+
+            return Ok(tasks);
+        }
+
+        
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
