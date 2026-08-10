@@ -1,5 +1,6 @@
 using MentalLoadDistributor.Core.Interfaces;
 using MentalLoadDistributor.Core.Ports;
+using MentalLoadDistributor.Core.Services;
 using MentalLoadDistributor.Infrastructure.Data;
 using MentalLoadDistributor.Infrastructure.Repositories;
 using MentalLoadDistributor.Infrastructure.Services;
@@ -37,6 +38,8 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddScoped<IReflectionService,FakeReflectionService>();
             services.AddScoped<IInsightsService, InsightsService>();
             services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<ITaskBulkActionService, TaskBulkActionService>();
+            services.AddScoped<DemoDataSeeder>();
 
             return services;
         }

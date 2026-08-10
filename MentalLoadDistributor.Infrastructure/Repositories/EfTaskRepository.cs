@@ -54,7 +54,8 @@ namespace MentalLoadDistributor.Infrastructure.Repositories
 
         public async Task UpdateAsync(TaskItem task)
         {
-            _db.Tasks.Update(task);
+            _db.Entry(task).State = EntityState.Modified;
+
             await _db.SaveChangesAsync();
         }
 

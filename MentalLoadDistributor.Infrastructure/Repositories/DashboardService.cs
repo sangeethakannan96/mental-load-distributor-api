@@ -114,6 +114,28 @@ namespace MentalLoadDistributor.Infrastructure.Repositories
                 })
                 .ToList();
         }
-      
+
+        public async Task<List<TaskItem>> GetFamilyReviewTasksAsync(Guid userId)
+        {
+            var user = await GetCurrentUserAsync(userId);
+
+            if (user.FamilyId == null)
+                return new List<TaskItem>();
+
+            var familyTasks =
+                await _taskRepository.GetByFamilyIdAsync(user.FamilyId.Value);
+
+            var today = DateTime.Today;
+
+            return familyTasks
+                .Where(t =>
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date < today &&
+                    t.Status != TaskStatus.Completed &&
+                    t.Status != TaskStatus.Cancelled)
+                .OrderBy(t => t.DueDate)
+                .ToList();
+        }
+
     }
 }

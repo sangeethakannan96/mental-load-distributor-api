@@ -34,5 +34,19 @@ namespace MentalLoadDistributor.Controllers
 
             return Ok(dashboard);
         }
+
+        [HttpGet("family-review")]
+        public async Task<IActionResult> GetFamilyReviewTasks()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var tasks = await _dashboardService
+                .GetFamilyReviewTasksAsync(Guid.Parse(userId));
+
+            return Ok(tasks);
+        }
     }
 }

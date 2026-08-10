@@ -24,13 +24,16 @@ namespace MentalLoadDistributor.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IFamilyRepository _familyRepository;
         private readonly DelegationService _delegation;
+        private readonly ITaskBulkActionService _taskBulkActionService;
 
-        public TasksController(ITaskRepository taskRepository, IUserRepository userRepository, IFamilyRepository familyRepository, DelegationService delegation)
+        public TasksController(ITaskRepository taskRepository, IUserRepository userRepository, IFamilyRepository familyRepository, DelegationService delegation,
+            ITaskBulkActionService taskBulkActionService)
         {
             _taskRepository = taskRepository;
             _userRepository = userRepository;
             _familyRepository = familyRepository;
             _delegation = delegation;
+            _taskBulkActionService = taskBulkActionService;
         }
 
        
@@ -418,6 +421,162 @@ namespace MentalLoadDistributor.Controllers
             await _taskRepository.UpdateAsync(task);
 
             return NoContent();
+        }
+
+
+        [HttpGet("my-active")]
+        public async Task<IActionResult> GetMyActive()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var myUserId = Guid.Parse(userId);
+
+            var currentUser = await _userRepository.GetAsync(myUserId);
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            var tasks = await _taskRepository.GetAllAsync();
+
+            var today = DateTime.Today;
+
+            var myActiveTasks = tasks
+                .Where(t =>
+                    t.AssignedToId == myUserId &&
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date == today &&
+                    t.Status != TaskStatus.Completed &&
+                    t.Status != TaskStatus.Cancelled)
+                .Select(t => new TaskDto
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    EstimatedMinutes = t.EstimatedMinutes,
+                    Status = t.Status,
+                    Category = t.Category,
+                    MentalLoadEstimate = t.MentalLoadEstimate,
+                    CreatedAt = t.CreatedAt,
+                    CompletedAt = t.CompletedAt,
+                    DueDate = t.DueDate,
+                    Recurrence = t.Recurrence,
+                    Priority = t.Priority,
+                    Tags = t.Tags,
+
+                    CreatedBy = new UserDto
+                    {
+                        Id = t.CreatedBy.Id,
+                        Name = t.CreatedBy.Name,
+                        AvailabilityScore = t.CreatedBy.AvailabilityScore
+                    },
+
+                    AssignedTo = t.AssignedTo != null
+                        ? new UserDto
+                        {
+                            Id = t.AssignedTo.Id,
+                            Name = t.AssignedTo.Name,
+                            AvailabilityScore = t.AssignedTo.AvailabilityScore
+                        }
+                        : null
+                })
+                .ToList();
+
+            return Ok(myActiveTasks);
+        }
+
+        [HttpGet("my-yesterday-review")]
+        public async Task<IActionResult> GetMyYesterdayReview()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var myUserId = Guid.Parse(userId);
+
+            var currentUser = await _userRepository.GetAsync(myUserId);
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            var tasks = await _taskRepository.GetAllAsync();
+
+            var today = DateTime.Today;
+
+            var reviewTasks = tasks
+                .Where(t =>
+                    t.AssignedToId == myUserId &&
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value.Date < today &&
+                    t.Status != TaskStatus.Completed &&
+                    t.Status != TaskStatus.Cancelled)
+                .OrderBy(t => t.DueDate)
+                .Select(t => new TaskDto
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    EstimatedMinutes = t.EstimatedMinutes,
+                    Status = t.Status,
+                    Category = t.Category,
+                    MentalLoadEstimate = t.MentalLoadEstimate,
+                    CreatedAt = t.CreatedAt,
+                    CompletedAt = t.CompletedAt,
+                    DueDate = t.DueDate,
+                    Recurrence = t.Recurrence,
+                    Priority = t.Priority,
+                    Tags = t.Tags,
+
+                    CreatedBy = new UserDto
+                    {
+                        Id = t.CreatedBy.Id,
+                        Name = t.CreatedBy.Name,
+                        AvailabilityScore = t.CreatedBy.AvailabilityScore
+                    },
+
+                    AssignedTo = t.AssignedTo != null
+                        ? new UserDto
+                        {
+                            Id = t.AssignedTo.Id,
+                            Name = t.AssignedTo.Name,
+                            AvailabilityScore = t.AssignedTo.AvailabilityScore
+                        }
+                        : null
+                })
+                .ToList();
+
+            return Ok(reviewTasks);
+        }
+
+        [HttpPost("bulk")]
+        public async Task<IActionResult> BulkAction(
+    [FromBody] BulkTaskActionDto request)
+        {
+            var userId =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            try
+            {
+                await _taskBulkActionService.ExecuteAsync(
+                    request,
+                    Guid.Parse(userId));
+
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
