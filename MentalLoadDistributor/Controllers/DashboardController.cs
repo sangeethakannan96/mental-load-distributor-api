@@ -29,7 +29,7 @@ namespace MentalLoadDistributor.Controllers
         }
 
 
-        [Authorize]
+       /* [Authorize]
         [HttpGet("family-review")]
         public async Task<IActionResult> GetFamilyReview()
         {
@@ -51,7 +51,7 @@ namespace MentalLoadDistributor.Controllers
 
             return Ok(tasks);
         }
-
+       */
 
         [HttpGet]
         public async Task<IActionResult> GetDashboard()

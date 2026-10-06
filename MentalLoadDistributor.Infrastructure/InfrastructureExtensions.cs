@@ -30,10 +30,11 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddScoped<IUserRepository, EfUserRepository>();
             services.AddScoped<IFamilyRepository, EfFamilyRepository>();
             services.AddScoped<ITaskRepository, EfTaskRepository>();
-            services.AddHttpClient<IAiService, OpenAiService>();
+            services.AddHttpClient<IAiService, AzureAiService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IFamilyProfileRepository, EfFamilyProfileRepository>();
-            services.AddScoped<IPlanningService, MockPlanningService>();
+            services.AddScoped<IPlanningService, AiPlanningService>();
+           // services.AddScoped<IPlanningService, MockPlanningService>();
             services.AddScoped<IReflectionRepository,EfReflectionRepository>();
             services.AddScoped<IReflectionService,FakeReflectionService>();
             services.AddScoped<IInsightsService, InsightsService>();

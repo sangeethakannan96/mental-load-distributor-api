@@ -8,5 +8,10 @@ namespace MentalLoadDistributor.Core.Ports
     {
         Task<string> AskAsync(string prompt);
 
+
+        Task<string> AskStructuredAsync(
+        string prompt,
+        object schema,
+        string schemaName);
     }
 }
