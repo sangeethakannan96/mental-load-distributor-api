@@ -14,7 +14,8 @@ namespace MentalLoadDistributor.Infrastructure.Services
     {
         public Task<List<SuggestedTask>>
             GenerateHouseholdPlanAsync(
-                string householdDescription)
+                string householdDescription,
+                string householdplan)
         {
             var result =
                 new List<SuggestedTask>

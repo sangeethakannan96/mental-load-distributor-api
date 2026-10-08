@@ -10,7 +10,7 @@ namespace MentalLoadDistributor.Core.Ports
     public interface IPlanningService
     {
         Task<List<SuggestedTask>> GenerateHouseholdPlanAsync(
-                string householdDescription);
+                string householdDescription, string householdPlan);
 
         Task<List<SuggestedTask>> GenerateEventPlanAsync(
     string prompt);

@@ -1,6 +1,7 @@
 ﻿using MentalLoadDistributor.Core.Domain.Enums;
 using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.Core.Domain.Models.AI;
+using MentalLoadDistributor.Core.Interfaces;
 using MentalLoadDistributor.Core.Ports;
 using MentalLoadDistributor.DTO;
 using MentalLoadDistributor.Infrastructure.Repositories;
@@ -15,29 +16,32 @@ namespace MentalLoadDistributor.Controllers
     public class AiController : ControllerBase
     {
         private readonly IAiService _aiService;
-        private readonly IPlanningService _mockPlanningService;
+        private readonly IPlanningService _planningService;
         private readonly IFamilyProfileRepository _familyProfileRepository;
         private readonly ITaskRepository _taskRepository;
         private readonly IUserRepository _userRepository;
         private readonly IReflectionService _reflectionService;
         private readonly IReflectionRepository _reflectionRepository;
+        private readonly IHouseholdPlanRepository _householdPlanRepository;
         
 
         public AiController(IAiService aiService,
             IFamilyProfileRepository familyprofileRepository,
-            IPlanningService mockPlanningService,
+            IPlanningService PlanningService,
             ITaskRepository taskRepository,
             IReflectionService reflectionService,
             IReflectionRepository reflectionRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IHouseholdPlanRepository householdPlanRepository)
         {
             _aiService = aiService;
-            _mockPlanningService = mockPlanningService;
+            _planningService = PlanningService;
             _taskRepository = taskRepository;
             _userRepository = userRepository;
             _reflectionService = reflectionService;
             _reflectionRepository = reflectionRepository;
             _familyProfileRepository = familyprofileRepository;
+            _householdPlanRepository = householdPlanRepository;
         }
 
         [HttpPost("suggest")]
@@ -53,7 +57,7 @@ namespace MentalLoadDistributor.Controllers
 
         [HttpPost("generate-household-plan")]
         public async Task<IActionResult>
-   GenerateHouseholdPlan()
+     GenerateHouseholdPlan()
         {
             var userId =
                 User.FindFirst(
@@ -71,23 +75,34 @@ namespace MentalLoadDistributor.Controllers
             if (user?.FamilyId == null)
                 return BadRequest();
 
+            var familyId =
+                user.FamilyId.Value;
+
             var profile =
                 await _familyProfileRepository
                     .GetByFamilyIdAsync(
-                        user.FamilyId.Value);
+                        familyId);
 
             if (profile == null)
                 return NotFound();
 
+            var householdPlan =
+                await _householdPlanRepository
+                    .GetByFamilyIdAsync(
+                        familyId);
+
+            if (householdPlan == null)
+                return NotFound(
+                    "Household plan not found");
+
             var suggestions =
-                await _mockPlanningService
+                await _planningService
                     .GenerateHouseholdPlanAsync(
-                        profile
-                            .HouseholdDescription);
+                        profile.HouseholdDescription,
+                        householdPlan.PlanDescription);
 
             return Ok(suggestions);
         }
-
 
         [HttpPost("generate-event-plan")]
         public async Task<IActionResult> GenerateEventPlan(
@@ -99,7 +114,7 @@ namespace MentalLoadDistributor.Controllers
             }
 
             var suggestions =
-                await _mockPlanningService
+                await _planningService
                     .GenerateEventPlanAsync(request.Prompt);
 
             return Ok(suggestions);
@@ -114,7 +129,7 @@ namespace MentalLoadDistributor.Controllers
                 return BadRequest("Please describe what's happening today.");
             }
 
-            var suggestions = await _mockPlanningService
+            var suggestions = await _planningService
                 .GenerateDailyPlanAsync(request.Prompt);
 
             return Ok(suggestions);
@@ -130,7 +145,7 @@ namespace MentalLoadDistributor.Controllers
                     "Please describe what's happening this week.");
             }
 
-            var suggestions = await _mockPlanningService
+            var suggestions = await _planningService
                 .GenerateWeeklyPlanAsync(request.Prompt);
 
             return Ok(suggestions);
@@ -147,7 +162,7 @@ namespace MentalLoadDistributor.Controllers
                     "Please describe what's happening this month.");
             }
 
-            var suggestions = await _mockPlanningService
+            var suggestions = await _planningService
                 .GenerateMonthlyPlanAsync(request.Prompt);
 
             return Ok(suggestions);

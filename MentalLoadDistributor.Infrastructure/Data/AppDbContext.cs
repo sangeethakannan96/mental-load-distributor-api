@@ -16,6 +16,8 @@ namespace MentalLoadDistributor.Infrastructure.Data
         public DbSet<TaskItem> Tasks { get; set; } = null!;
         public DbSet<FamilyProfile> FamilyProfiles { get; set; }
 
+        public DbSet<HouseholdPlan> HouseholdPlans { get; set; }
+
         public DbSet<DailyReflection> DailyReflections { get; set; }
 
         public DbSet<ActivityLog> ActivityLogs { get; set; }
@@ -168,6 +170,12 @@ namespace MentalLoadDistributor.Infrastructure.Data
     .WithMany()
     .HasForeignKey(fp => fp.FamilyId);
 
+
+            modelBuilder.Entity<HouseholdPlan>()
+    .HasOne(x => x.Family)
+    .WithMany()
+    .HasForeignKey(x => x.FamilyId)
+    .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<DailyReflection>()
     .HasOne(r => r.User)

@@ -33,6 +33,7 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddHttpClient<IAiService, AzureAiService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IFamilyProfileRepository, EfFamilyProfileRepository>();
+            services.AddScoped<IHouseholdPlanRepository, EfHouseholdPlanRepository>();
             services.AddScoped<IPlanningService, AiPlanningService>();
            // services.AddScoped<IPlanningService, MockPlanningService>();
             services.AddScoped<IReflectionRepository,EfReflectionRepository>();

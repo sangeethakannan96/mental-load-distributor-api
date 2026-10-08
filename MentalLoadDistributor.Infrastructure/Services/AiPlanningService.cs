@@ -21,9 +21,18 @@ namespace MentalLoadDistributor.Infrastructure.Services
         }
 
         public async Task<List<SuggestedTask>> GenerateHouseholdPlanAsync(
-            string householdDescription)
+     string householdContext,
+     string householdPlan)
         {
-            return await GenerateTasksAsync(householdDescription);
+            var userInput = $$"""
+Household Context:
+{{householdContext}}
+
+Current Household Plan:
+{{householdPlan}}
+""";
+
+            return await GenerateTasksAsync(userInput);
         }
 
         public async Task<List<SuggestedTask>> GenerateEventPlanAsync(
