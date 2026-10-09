@@ -12,7 +12,16 @@ namespace MentalLoadDistributor.Core.Ports
         Task<ApprovedPlan?> GetByFamilyIdAsync(
             Guid familyId);
 
+        Task<ApprovedPlan?> GetByIdWithTasksAsync(Guid planId);
+
+        Task UpdateAsync(
+    ApprovedPlan plan,
+    IReadOnlyCollection<ApprovedPlanItem> newItems);
+
         Task AddAsync(
             ApprovedPlan plan);
+
+        Task CheckPlanItemsAsync(ApprovedPlan plan);
+        
     }
 }

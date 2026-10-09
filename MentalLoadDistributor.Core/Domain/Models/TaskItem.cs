@@ -54,6 +54,12 @@ namespace MentalLoadDistributor.Core.Domain.Models
 
         public TaskCategory Category { get; set; } = TaskCategory.Other;
 
+        
+        public Guid? ApprovedPlanItemId { get; set; }
+
+        public ApprovedPlanItem? ApprovedPlanItem { get; set; }
+
+
         public int EstimatedMinutes { get; set; }
 
         public int MentalLoadEstimate { get; set; }

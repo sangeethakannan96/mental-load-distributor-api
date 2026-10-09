@@ -21,5 +21,7 @@ namespace MentalLoadDistributor.Core.Domain.Models.AI
         public int EstimatedMinutes { get; set; }
 
         public TaskPriority Priority { get; set; }
+
+        public Guid? ApprovedPlanItemId { get; set; }
     }
 }

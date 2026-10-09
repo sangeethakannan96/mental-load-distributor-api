@@ -32,5 +32,48 @@ namespace MentalLoadDistributor.Infrastructure.Repositories
 
             await _db.SaveChangesAsync();
         }
+
+        public async Task<ApprovedPlan?> GetByIdWithTasksAsync(
+    Guid planId)
+        {
+            return await _db.ApprovedPlans
+                .Include(p => p.Items)
+                    .ThenInclude(item => item.Tasks)
+                .FirstOrDefaultAsync(p => p.Id == planId);
+        }
+
+
+       
+
+        
+
+public async Task UpdateAsync(
+    ApprovedPlan plan,
+    IReadOnlyCollection<ApprovedPlanItem> newItems)
+        {
+            foreach (var item in newItems)
+            {
+                _db.Entry(item).State = EntityState.Added;
+            }
+
+            await _db.SaveChangesAsync();
+        }
+
+
+        public async Task CheckPlanItemsAsync(ApprovedPlan plan)
+        {
+            foreach (var item in plan.Items)
+            {
+                var exists = await _db.ApprovedPlanItems
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Id == item.Id);
+
+                Console.WriteLine(
+                    $"PlanItemId={item.Id}, ExistsInDatabase={exists}");
+            }
+
+
+        }
+
     }
 }

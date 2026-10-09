@@ -37,5 +37,8 @@ namespace MentalLoadDistributor.Core.Domain.Models
 
         public List<string> Tags { get; set; }
             = new();
+
+        public ICollection<TaskItem> Tasks { get; set; }
+    = new List<TaskItem>();
     }
 }

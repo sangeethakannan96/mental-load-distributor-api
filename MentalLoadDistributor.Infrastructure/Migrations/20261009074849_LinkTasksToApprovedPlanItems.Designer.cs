@@ -4,6 +4,7 @@ using MentalLoadDistributor.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MentalLoadDistributor.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261009074849_LinkTasksToApprovedPlanItems")]
+    partial class LinkTasksToApprovedPlanItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -326,9 +329,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApprovedPlanItemId")
-                        .IsUnique()
-                        .HasFilter("[ApprovedPlanItemId] IS NOT NULL");
+                    b.HasIndex("ApprovedPlanItemId");
 
                     b.HasIndex("AssignedToId");
 
@@ -346,7 +347,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             AssignedToId = new Guid("33333333-3333-3333-3333-333333333333"),
                             Category = 9,
-                            CreatedAt = new DateTime(2026, 10, 9, 8, 18, 45, 934, DateTimeKind.Utc).AddTicks(103),
+                            CreatedAt = new DateTime(2026, 10, 9, 7, 48, 48, 238, DateTimeKind.Utc).AddTicks(7930),
                             CreatedById = new Guid("22222222-2222-2222-2222-222222222222"),
                             EstimatedMinutes = 45,
                             FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),
@@ -362,7 +363,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
                             Category = 9,
-                            CreatedAt = new DateTime(2026, 10, 9, 8, 18, 45, 934, DateTimeKind.Utc).AddTicks(116),
+                            CreatedAt = new DateTime(2026, 10, 9, 7, 48, 48, 238, DateTimeKind.Utc).AddTicks(7952),
                             CreatedById = new Guid("33333333-3333-3333-3333-333333333333"),
                             EstimatedMinutes = 20,
                             FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),

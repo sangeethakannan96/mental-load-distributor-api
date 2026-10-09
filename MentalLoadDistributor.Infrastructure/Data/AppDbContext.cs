@@ -217,6 +217,11 @@ namespace MentalLoadDistributor.Infrastructure.Data
     .WithMany(x => x.Items)
     .HasForeignKey(x => x.ApprovedPlanId)
     .OnDelete(DeleteBehavior.Cascade);
+
+    modelBuilder.Entity<TaskItem>()
+    .HasIndex(t => t.ApprovedPlanItemId)
+    .IsUnique()
+    .HasFilter("[ApprovedPlanItemId] IS NOT NULL");
         }
     }
 }

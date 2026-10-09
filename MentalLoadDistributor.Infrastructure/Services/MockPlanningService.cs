@@ -297,5 +297,10 @@ namespace MentalLoadDistributor.Infrastructure.Services
         }
     };
         }
+
+        public Task<List<SuggestedTask>> RefineHouseholdPlanAsync(string householdDescription, string householdPlan, string currentApprovedBlueprint, List<SuggestedTask> currentSuggestions, string? refinementInstructions)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

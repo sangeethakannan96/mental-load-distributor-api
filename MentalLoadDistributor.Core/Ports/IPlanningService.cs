@@ -25,6 +25,15 @@ namespace MentalLoadDistributor.Core.Ports
     string prompt);
 
 
+        Task<List<SuggestedTask>> RefineHouseholdPlanAsync(
+            string householdDescription,
+            string householdPlan,
+            string currentApprovedBlueprint,
+            List<SuggestedTask> currentSuggestions,
+            string? refinementInstructions);
+
+
+
 
     }
 }
