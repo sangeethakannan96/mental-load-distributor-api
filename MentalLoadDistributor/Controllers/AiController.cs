@@ -23,7 +23,8 @@ namespace MentalLoadDistributor.Controllers
         private readonly IReflectionService _reflectionService;
         private readonly IReflectionRepository _reflectionRepository;
         private readonly IHouseholdPlanRepository _householdPlanRepository;
-        
+        private readonly IApprovedPlanRepository _approvedPlanRepository;
+
 
         public AiController(IAiService aiService,
             IFamilyProfileRepository familyprofileRepository,
@@ -32,7 +33,8 @@ namespace MentalLoadDistributor.Controllers
             IReflectionService reflectionService,
             IReflectionRepository reflectionRepository,
             IUserRepository userRepository,
-            IHouseholdPlanRepository householdPlanRepository)
+            IHouseholdPlanRepository householdPlanRepository,
+            IApprovedPlanRepository approvedPlanRepository)
         {
             _aiService = aiService;
             _planningService = PlanningService;
@@ -42,6 +44,7 @@ namespace MentalLoadDistributor.Controllers
             _reflectionRepository = reflectionRepository;
             _familyProfileRepository = familyprofileRepository;
             _householdPlanRepository = householdPlanRepository;
+            _approvedPlanRepository = approvedPlanRepository;
         }
 
         [HttpPost("suggest")]
@@ -170,7 +173,8 @@ namespace MentalLoadDistributor.Controllers
 
 
         [HttpPost("approve-suggestions")]
-        public async Task<IActionResult> ApproveSuggestions([FromBody] ApproveSuggestionsRequest request)
+        public async Task<IActionResult> ApproveSuggestions(
+    [FromBody] ApproveSuggestionsRequest request)
         {
             var userId =
                 User.FindFirst(
@@ -186,6 +190,44 @@ namespace MentalLoadDistributor.Controllers
 
             if (currentUser == null)
                 return Unauthorized();
+
+            if (currentUser.FamilyId == null)
+                return BadRequest(
+                    "User has no family");
+
+            var familyId =
+                currentUser.FamilyId.Value;
+
+
+            // -----------------------------------------
+            // 1. Create the Approved Plan
+            // -----------------------------------------
+
+            var approvedPlan =
+                new ApprovedPlan
+                {
+                    Id = Guid.NewGuid(),
+
+                    FamilyId = familyId,
+
+                    Title =
+                        "Household Responsibility Plan",
+
+                    Description =
+                        "Approved household responsibilities " +
+                        "generated from the household planning process.",
+
+                    CreatedOn =
+                        DateTime.UtcNow,
+
+                    UpdatedOn =
+                        DateTime.UtcNow
+                };
+
+
+            // -----------------------------------------
+            // 2. Add approved plan items
+            // -----------------------------------------
 
             foreach (var suggestion
                 in request.Suggestions)
@@ -206,6 +248,95 @@ namespace MentalLoadDistributor.Controllers
                             RecurrenceType.None
                     };
 
+
+                var category =
+                    Enum.TryParse<TaskCategory>(
+                        suggestion.Category,
+                        true,
+                        out var parsedCategory)
+                        ? parsedCategory
+                        : TaskCategory.Other;
+
+
+                var approvedPlanItem =
+                    new ApprovedPlanItem
+                    {
+                        Id = Guid.NewGuid(),
+
+                        ApprovedPlanId =
+                            approvedPlan.Id,
+
+                        Title =
+                            suggestion.Title,
+
+                        Description =
+                            suggestion.Description,
+
+                        SuggestedAssigneeRole =
+                             suggestion.SuggestedAssigneeRole,
+
+                        StartDate =
+                             suggestion.StartDate,
+
+                        Priority =
+                            suggestion.Priority,
+
+                        Category =
+                            category,
+
+                        EstimatedMinutes =
+                            suggestion.EstimatedMinutes,
+
+                        MentalLoadEstimate =
+                            suggestion.EmotionalLoad,
+
+                        Recurrence =
+                            recurrence,
+
+                        Tags =
+                            new List<string>
+                            {
+                        suggestion.Category
+                            }
+                    };
+
+                approvedPlan.Items.Add(
+                    approvedPlanItem);
+            }
+
+
+            // -----------------------------------------
+            // 3. Save the Approved Plan
+            // -----------------------------------------
+
+            await _approvedPlanRepository
+                .AddAsync(approvedPlan);
+
+
+            // -----------------------------------------
+            // 4. Create TaskItems
+            // -----------------------------------------
+
+            foreach (var suggestion
+                in request.Suggestions)
+            {
+                var recurrence =
+                    suggestion.Recurrence switch
+                    {
+                        "Daily" =>
+                            RecurrenceType.Daily,
+
+                        "Weekly" =>
+                            RecurrenceType.Weekly,
+
+                        "Monthly" =>
+                            RecurrenceType.Monthly,
+
+                        _ =>
+                            RecurrenceType.None
+                    };
+
+
                 var task =
                     new TaskItem
                     {
@@ -218,22 +349,31 @@ namespace MentalLoadDistributor.Controllers
                         CreatedById =
                             currentUser.Id,
 
-                        DueDate = suggestion.StartDate,
+                        DueDate =
+                            suggestion.StartDate,
 
-                        Priority = suggestion.Priority,
+                        Priority =
+                            suggestion.Priority,
 
+                        Status =
+                            TaskStatus.Pending,
 
-                        Status = TaskStatus.Pending,
-                        CreatedAt = DateTime.UtcNow,
-                        FamilyId = currentUser.FamilyId!.Value,
-                        Category = Enum.TryParse<TaskCategory>(
-                                    suggestion.Category,
-                                    true,
-                                    out var category)
-                                    ? category
-                                    : TaskCategory.Other,
+                        CreatedAt =
+                            DateTime.UtcNow,
 
-                        EstimatedMinutes = suggestion.EstimatedMinutes,
+                        FamilyId =
+                            familyId,
+
+                        Category =
+                            Enum.TryParse<TaskCategory>(
+                                suggestion.Category,
+                                true,
+                                out var category)
+                                ? category
+                                : TaskCategory.Other,
+
+                        EstimatedMinutes =
+                            suggestion.EstimatedMinutes,
 
                         MentalLoadEstimate =
                             suggestion.EmotionalLoad,
@@ -254,7 +394,6 @@ namespace MentalLoadDistributor.Controllers
 
             return Ok();
         }
-
 
         [HttpPost("analyze-reflection")]
         public async Task<IActionResult> AnalyzeReflection(

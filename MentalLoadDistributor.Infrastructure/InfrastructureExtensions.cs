@@ -41,6 +41,7 @@ namespace MentalLoadDistributor.Infrastructure
             services.AddScoped<IInsightsService, InsightsService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<ITaskBulkActionService, TaskBulkActionService>();
+            services.AddScoped<IApprovedPlanRepository,EfApprovedPlanRepository>();
             services.AddScoped<DemoDataSeeder>();
 
             return services;

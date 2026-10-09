@@ -22,6 +22,10 @@ namespace MentalLoadDistributor.Infrastructure.Data
 
         public DbSet<ActivityLog> ActivityLogs { get; set; }
 
+        public DbSet<ApprovedPlan> ApprovedPlans { get; set; }
+
+        public DbSet<ApprovedPlanItem> ApprovedPlanItems { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -201,6 +205,18 @@ namespace MentalLoadDistributor.Infrastructure.Data
     .WithMany()
     .HasForeignKey(a => a.UserId)
     .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ApprovedPlan>()
+    .HasOne(x => x.Family)
+    .WithMany()
+    .HasForeignKey(x => x.FamilyId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ApprovedPlanItem>()
+    .HasOne(x => x.ApprovedPlan)
+    .WithMany(x => x.Items)
+    .HasForeignKey(x => x.ApprovedPlanId)
+    .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
