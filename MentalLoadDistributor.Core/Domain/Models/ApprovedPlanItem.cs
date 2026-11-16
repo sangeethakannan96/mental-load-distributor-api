@@ -14,6 +14,9 @@ namespace MentalLoadDistributor.Core.Domain.Models
 
         public string? Description { get; set; }
 
+        
+        public bool IsActive { get; set; } = true;
+
         public Guid? AssignedToId { get; set; }
 
         public User? AssignedTo { get; set; }

@@ -116,6 +116,9 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                     b.Property<int>("EstimatedMinutes")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<int>("MentalLoadEstimate")
                         .HasColumnType("int");
 
@@ -346,7 +349,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
                             AssignedToId = new Guid("33333333-3333-3333-3333-333333333333"),
                             Category = 9,
-                            CreatedAt = new DateTime(2026, 10, 9, 8, 18, 45, 934, DateTimeKind.Utc).AddTicks(103),
+                            CreatedAt = new DateTime(2026, 10, 12, 11, 36, 4, 725, DateTimeKind.Utc).AddTicks(7787),
                             CreatedById = new Guid("22222222-2222-2222-2222-222222222222"),
                             EstimatedMinutes = 45,
                             FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),
@@ -362,7 +365,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
                             Category = 9,
-                            CreatedAt = new DateTime(2026, 10, 9, 8, 18, 45, 934, DateTimeKind.Utc).AddTicks(116),
+                            CreatedAt = new DateTime(2026, 10, 12, 11, 36, 4, 725, DateTimeKind.Utc).AddTicks(7804),
                             CreatedById = new Guid("33333333-3333-3333-3333-333333333333"),
                             EstimatedMinutes = 20,
                             FamilyId = new Guid("11111111-1111-1111-1111-111111111111"),
@@ -522,7 +525,7 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
             modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.TaskItem", b =>
                 {
                     b.HasOne("MentalLoadDistributor.Core.Domain.Models.ApprovedPlanItem", "ApprovedPlanItem")
-                        .WithMany()
+                        .WithMany("Tasks")
                         .HasForeignKey("ApprovedPlanItemId");
 
                     b.HasOne("MentalLoadDistributor.Core.Domain.Models.User", "AssignedTo")
@@ -568,6 +571,11 @@ namespace MentalLoadDistributor.Infrastructure.Migrations
             modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.ApprovedPlan", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.ApprovedPlanItem", b =>
+                {
+                    b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("MentalLoadDistributor.Core.Domain.Models.DailyReflection", b =>

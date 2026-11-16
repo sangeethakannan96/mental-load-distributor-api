@@ -1,4 +1,5 @@
-﻿using MentalLoadDistributor.Core.Domain.Enums;
+﻿using MentalLoadDistributor.API.DTOs;
+using MentalLoadDistributor.Core.Domain.Enums;
 using MentalLoadDistributor.Core.Domain.Models;
 using MentalLoadDistributor.Core.Domain.Models.AI;
 using MentalLoadDistributor.Core.Interfaces;
@@ -95,7 +96,8 @@ namespace MentalLoadDistributor.Controllers
             var currentBlueprint = approvedPlan == null
                 ? "No approved household blueprint exists yet."
                 : System.Text.Json.JsonSerializer.Serialize(
-                    approvedPlan.Items.Select(item => new
+                            approvedPlan.Items.Where(item => item.IsActive)
+                            .Select(item => new
                     {
                         item.Id,
                         item.Title,
@@ -122,6 +124,78 @@ namespace MentalLoadDistributor.Controllers
 
 
             return Ok(suggestions);
+        }
+
+
+
+        [HttpPost("refine-suggestions")]
+        public async Task<IActionResult> RefineSuggestions(
+            [FromBody] RefineSuggestionsRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var user = await _userRepository.GetAsync(Guid.Parse(userId));
+
+            if (user?.FamilyId == null)
+                return BadRequest("User has no family.");
+
+            if (request == null ||
+                request.Suggestions == null ||
+                request.Suggestions.Count == 0)
+            {
+                return BadRequest("No suggestions were provided.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.RefinementInstructions))
+                return BadRequest("Refinement instructions are required.");
+
+            var familyId = user.FamilyId.Value;
+
+            var profile = await _familyProfileRepository
+                .GetByFamilyIdAsync(familyId);
+
+            if (profile == null)
+                return NotFound("Household profile not found.");
+
+            var householdPlan = await _householdPlanRepository
+                .GetByFamilyIdAsync(familyId);
+
+            if (householdPlan == null)
+                return NotFound("Household plan not found.");
+
+            var approvedPlan = await _approvedPlanRepository
+                .GetByFamilyIdAsync(familyId);
+
+            var currentBlueprint = approvedPlan == null
+                ? "No approved household blueprint exists yet."
+                : System.Text.Json.JsonSerializer.Serialize(
+                    approvedPlan.Items
+                        .Where(item => item.IsActive)
+                        .Select(item => new
+                        {
+                            item.Id,
+                            item.Title,
+                            item.Description,
+                            Category = item.Category.ToString(),
+                            Recurrence = item.Recurrence.ToString(),
+                            item.StartDate,
+                            item.SuggestedAssigneeRole,
+                            item.EstimatedMinutes,
+                            item.MentalLoadEstimate
+                        }));
+
+            var refinedSuggestions =
+                await _planningService.RefineHouseholdPlanAsync(
+                    profile.HouseholdDescription,
+                    householdPlan.PlanDescription,
+                    currentBlueprint,
+                    request.Suggestions,
+                    request.RefinementInstructions.Trim());
+
+            return Ok(refinedSuggestions);
         }
 
 
@@ -456,7 +530,9 @@ namespace MentalLoadDistributor.Controllers
                 Title = approvedPlan.Title,
                 Description = approvedPlan.Description,
 
-                Items = approvedPlan.Items.Select(item =>
+                Items = approvedPlan.Items
+                        .Where(item => item.IsActive)
+                        .Select(item =>
                     new ApprovedPlanItemResponseDto
                     {
                         Id = item.Id,
@@ -473,6 +549,105 @@ namespace MentalLoadDistributor.Controllers
 
             return Ok(response);
         }
+
+        
+[HttpDelete("approved-plan/items/{itemId:guid}")]
+public async Task<IActionResult> DeleteApprovedPlanItem(Guid itemId)
+        {
+            var userId = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var currentUser = await _userRepository.GetAsync(
+                Guid.Parse(userId));
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            if (currentUser.FamilyId == null)
+                return BadRequest("User has no family.");
+
+            var approvedPlan =
+                await _approvedPlanRepository.GetByFamilyIdAsync(
+                    currentUser.FamilyId.Value);
+
+            if (approvedPlan == null)
+                return NotFound("No approved plan found.");
+
+            var item = approvedPlan.Items
+                .FirstOrDefault(x => x.Id == itemId);
+
+            if (item == null || !item.IsActive)
+                return NotFound("Active plan item not found.");
+
+            // Soft-delete: preserve the record and linked task history.
+            item.IsActive = false;
+            approvedPlan.UpdatedOn = DateTime.UtcNow;
+
+            await _approvedPlanRepository.UpdateAsync(
+                approvedPlan,
+                Array.Empty<ApprovedPlanItem>());
+
+            return NoContent();
+        }
+
+
+
+        [HttpPut("approved-plan/items/{itemId:guid}")]
+        public async Task<IActionResult> UpdateApprovedPlanItem(
+            Guid itemId,
+            [FromBody] UpdateApprovedPlanItemRequest request)
+        {
+            var userId = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var currentUser = await _userRepository.GetAsync(Guid.Parse(userId));
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            if (currentUser.FamilyId == null)
+                return BadRequest("User has no family.");
+
+            if (request == null || string.IsNullOrWhiteSpace(request.Title))
+                return BadRequest("Title is required.");
+
+            if (request.EstimatedMinutes < 0)
+                return BadRequest("Estimated minutes cannot be negative.");
+
+            var approvedPlan = await _approvedPlanRepository.GetByFamilyIdAsync(
+                currentUser.FamilyId.Value);
+
+            if (approvedPlan == null)
+                return NotFound("No approved plan found.");
+
+            var item = approvedPlan.Items.FirstOrDefault(
+                x => x.Id == itemId && x.IsActive);
+
+            if (item == null)
+                return NotFound("Active plan item not found.");
+
+            item.Title = request.Title.Trim();
+            item.Description = request.Description;
+            item.Category = request.Category;
+            item.Recurrence = request.Recurrence;
+            item.EstimatedMinutes = request.EstimatedMinutes;
+            item.SuggestedAssigneeRole = request.SuggestedAssigneeRole;
+            approvedPlan.UpdatedOn = DateTime.UtcNow;
+
+            await _approvedPlanRepository.UpdateAsync(
+                approvedPlan,
+                Array.Empty<ApprovedPlanItem>());
+
+            return NoContent();
+        }
+
+
 
     }
 }
