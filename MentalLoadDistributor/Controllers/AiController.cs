@@ -123,7 +123,11 @@ namespace MentalLoadDistributor.Controllers
                 changeInstructions);
 
 
-            return Ok(suggestions);
+            var changedSuggestions = FilterChangedSuggestions(
+                suggestions,
+                approvedPlan);
+
+            return Ok(changedSuggestions);
         }
 
 
@@ -195,7 +199,11 @@ namespace MentalLoadDistributor.Controllers
                     request.Suggestions,
                     request.RefinementInstructions.Trim());
 
-            return Ok(refinedSuggestions);
+            var changedSuggestions = FilterChangedSuggestions(
+                refinedSuggestions,
+                approvedPlan);
+
+            return Ok(changedSuggestions);
         }
 
 
@@ -312,7 +320,29 @@ namespace MentalLoadDistributor.Controllers
                 await _approvedPlanRepository.CheckPlanItemsAsync(approvedPlan);
             }
 
-            var existingItems = approvedPlan.Items.ToDictionary(x => x.Id);
+            static string BuildDedupKey(
+                string? title,
+                TaskCategory category,
+                RecurrenceType recurrence)
+            {
+                var normalizedTitle =
+                    string.IsNullOrWhiteSpace(title)
+                        ? string.Empty
+                        : title.Trim().ToLowerInvariant();
+
+                return $"{normalizedTitle}|{category}|{recurrence}";
+            }
+
+            var existingItems = approvedPlan.Items
+                .Where(x => x.IsActive)
+                .ToDictionary(x => x.Id);
+
+            var existingItemsByKey = approvedPlan.Items
+                .Where(x => x.IsActive)
+                .GroupBy(x => BuildDedupKey(x.Title, x.Category, x.Recurrence))
+                .ToDictionary(x => x.Key, x => x.First());
+
+            var processedItemIds = new HashSet<Guid>();
             var newItems = new List<ApprovedPlanItem>();
 
             foreach (var suggestion in request.Suggestions)
@@ -344,14 +374,29 @@ namespace MentalLoadDistributor.Controllers
                 }
                 else
                 {
-                    item = new ApprovedPlanItem
-                    {
-                        Id = Guid.NewGuid(),
-                        ApprovedPlanId = approvedPlan.Id
-                    };
+                    var dedupKey = BuildDedupKey(
+                        suggestion.Title,
+                        category,
+                        recurrence);
 
-                    approvedPlan.Items.Add(item);
-                    newItems.Add(item);
+                    if (!existingItemsByKey.TryGetValue(dedupKey, out item!))
+                    {
+                        item = new ApprovedPlanItem
+                        {
+                            Id = Guid.NewGuid(),
+                            ApprovedPlanId = approvedPlan.Id
+                        };
+
+                        approvedPlan.Items.Add(item);
+                        newItems.Add(item);
+                        existingItemsByKey[dedupKey] = item;
+                    }
+                }
+
+                if (!processedItemIds.Add(item.Id))
+                {
+                    return BadRequest(
+                        "Duplicate suggestions were provided for the same responsibility.");
                 }
 
                 // Update the blueprint item.
@@ -645,6 +690,131 @@ public async Task<IActionResult> DeleteApprovedPlanItem(Guid itemId)
                 Array.Empty<ApprovedPlanItem>());
 
             return NoContent();
+        }
+
+        private static List<SuggestedTask> FilterChangedSuggestions(
+            IEnumerable<SuggestedTask> suggestions,
+            ApprovedPlan? approvedPlan)
+        {
+            if (approvedPlan == null)
+            {
+                return suggestions.ToList();
+            }
+
+            var activeItems = approvedPlan.Items
+                .Where(x => x.IsActive)
+                .ToList();
+
+            var existingById = activeItems
+                .ToDictionary(x => x.Id);
+
+            var existingByKey = activeItems
+                .GroupBy(x => BuildSuggestionKey(
+                    x.Title,
+                    x.Category,
+                    x.Recurrence))
+                .ToDictionary(x => x.Key, x => x.First());
+
+            var changed = new List<SuggestedTask>();
+
+            foreach (var suggestion in suggestions)
+            {
+                var recurrence = ParseRecurrence(suggestion.Recurrence);
+                var category = ParseCategory(suggestion.Category);
+
+                ApprovedPlanItem? baseline = null;
+
+                if (suggestion.ApprovedPlanItemId.HasValue)
+                {
+                    existingById.TryGetValue(
+                        suggestion.ApprovedPlanItemId.Value,
+                        out baseline);
+                }
+                else
+                {
+                    existingByKey.TryGetValue(
+                        BuildSuggestionKey(
+                            suggestion.Title,
+                            category,
+                            recurrence),
+                        out baseline);
+                }
+
+                if (baseline == null)
+                {
+                    changed.Add(suggestion);
+                    continue;
+                }
+
+                if (HasMeaningfulChanges(suggestion, baseline, category, recurrence))
+                {
+                    changed.Add(suggestion);
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool HasMeaningfulChanges(
+            SuggestedTask suggestion,
+            ApprovedPlanItem baseline,
+            TaskCategory category,
+            RecurrenceType recurrence)
+        {
+            return !string.Equals(
+                       Normalize(suggestion.Title),
+                       Normalize(baseline.Title),
+                       StringComparison.OrdinalIgnoreCase)
+                   || !string.Equals(
+                       Normalize(suggestion.Description),
+                       Normalize(baseline.Description),
+                       StringComparison.OrdinalIgnoreCase)
+                   || !string.Equals(
+                       Normalize(suggestion.SuggestedAssigneeRole),
+                       Normalize(baseline.SuggestedAssigneeRole),
+                       StringComparison.OrdinalIgnoreCase)
+                   || suggestion.StartDate != baseline.StartDate
+                   || suggestion.EstimatedMinutes != baseline.EstimatedMinutes
+                   || suggestion.EmotionalLoad != baseline.MentalLoadEstimate
+                   || suggestion.Priority != baseline.Priority
+                   || category != baseline.Category
+                   || recurrence != baseline.Recurrence;
+        }
+
+        private static string BuildSuggestionKey(
+            string? title,
+            TaskCategory category,
+            RecurrenceType recurrence)
+        {
+            return $"{Normalize(title)}|{category}|{recurrence}";
+        }
+
+        private static TaskCategory ParseCategory(string? category)
+        {
+            return Enum.TryParse<TaskCategory>(
+                category,
+                true,
+                out var parsedCategory)
+                ? parsedCategory
+                : TaskCategory.Other;
+        }
+
+        private static RecurrenceType ParseRecurrence(string? recurrence)
+        {
+            return recurrence?.Trim().ToLowerInvariant() switch
+            {
+                "daily" => RecurrenceType.Daily,
+                "weekly" => RecurrenceType.Weekly,
+                "monthly" => RecurrenceType.Monthly,
+                _ => RecurrenceType.None
+            };
+        }
+
+        private static string Normalize(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim();
         }
 
 

@@ -182,6 +182,12 @@ Current Household Plan:
                                 {
                                     type = "integer",
                                     @enum = new[] { 0, 1, 2 }
+                                },
+
+                                approvedPlanItemId = new
+                                {
+                                    type = new[] { "string", "null" },
+                                    format = "uuid"
                                 }
                             },
 
@@ -195,7 +201,8 @@ Current Household Plan:
                         "suggestedAssigneeRole",
                         "emotionalLoad",
                         "estimatedMinutes",
-                        "priority"
+                        "priority",
+                        "approvedPlanItemId"
                     },
 
                             additionalProperties = false
@@ -287,7 +294,8 @@ public async Task<List<SuggestedTask>> RefineHouseholdPlanAsync(
         - Do not discard unaffected responsibilities or invent unsupported
           family members, skills, or household circumstances.
         - Use current suggestions as the starting point for refinement.
-        - Return the complete revised set of suggestions, not only the changes.
+        - Return only changed responsibilities (new or modified items).
+        - Do not include unchanged existing responsibilities in the output.
         - Keep titles, categories, assignee roles, recurrence, priorities,
           estimated minutes, and emotional load consistent with the input
           and requested changes.
@@ -302,6 +310,10 @@ public async Task<List<SuggestedTask>> RefineHouseholdPlanAsync(
         - For a genuinely new responsibility, return null for approvedPlanItemId.
         - Never invent an ID or assign an ID to a different responsibility.
         - For initial generation, approvedPlanItemId must be null.
+        - Do not return duplicate responsibilities.
+        - Each approvedPlanItemId can appear at most once.
+        - For new items (approvedPlanItemId = null), do not duplicate the same
+          title/category/recurrence combination.
 
         Planning information:
         {{userInput}}
@@ -329,7 +341,50 @@ public async Task<List<SuggestedTask>> RefineHouseholdPlanAsync(
                     "AI returned an empty or invalid refined household plan.");
             }
 
-            return result.Tasks;
+            return DeduplicateSuggestions(result.Tasks);
+        }
+
+        private static List<SuggestedTask> DeduplicateSuggestions(
+            IEnumerable<SuggestedTask> suggestions)
+        {
+            var deduped = new List<SuggestedTask>();
+            var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var suggestion in suggestions)
+            {
+                var key = BuildDedupKey(suggestion);
+
+                if (!seenKeys.Add(key))
+                {
+                    continue;
+                }
+
+                deduped.Add(suggestion);
+            }
+
+            return deduped;
+        }
+
+        private static string BuildDedupKey(SuggestedTask suggestion)
+        {
+            if (suggestion.ApprovedPlanItemId.HasValue)
+            {
+                return $"id:{suggestion.ApprovedPlanItemId.Value}";
+            }
+
+            var title = string.IsNullOrWhiteSpace(suggestion.Title)
+                ? string.Empty
+                : suggestion.Title.Trim().ToLowerInvariant();
+
+            var category = string.IsNullOrWhiteSpace(suggestion.Category)
+                ? string.Empty
+                : suggestion.Category.Trim().ToLowerInvariant();
+
+            var recurrence = string.IsNullOrWhiteSpace(suggestion.Recurrence)
+                ? string.Empty
+                : suggestion.Recurrence.Trim().ToLowerInvariant();
+
+            return $"new:{title}|{category}|{recurrence}";
         }
     }
     }
