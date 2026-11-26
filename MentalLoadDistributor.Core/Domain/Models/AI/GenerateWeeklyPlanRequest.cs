@@ -9,5 +9,7 @@ namespace MentalLoadDistributor.Core.Domain.Models.AI
     public class GenerateWeeklyPlanRequest
     {
         public string Prompt { get; set; } = string.Empty;
+
+        public DateTime? WeekStartDate { get; set; }
     }
 }

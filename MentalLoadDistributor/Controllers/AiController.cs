@@ -227,29 +227,90 @@ namespace MentalLoadDistributor.Controllers
         public async Task<IActionResult> GenerateDailyPlan(
     [FromBody] GenerateDailyPlanRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var currentUser = await _userRepository.GetAsync(Guid.Parse(userId));
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            if (currentUser.FamilyId == null)
+                return BadRequest("User has no family.");
+
             if (string.IsNullOrWhiteSpace(request.Prompt))
             {
                 return BadRequest("Please describe what's happening today.");
             }
 
-            var suggestions = await _planningService
-                .GenerateDailyPlanAsync(request.Prompt);
+            var planDate = (request.PlanDate ?? DateTime.UtcNow).Date;
 
-            return Ok(suggestions);
+            var existingTasks = await _taskRepository.GetByFamilyIdAsync(
+                currentUser.FamilyId.Value,
+                planDate,
+                planDate);
+
+            var dailyPrompt = BuildDailyPlanPrompt(
+                request.Prompt.Trim(),
+                planDate,
+                existingTasks);
+
+            var suggestions = await _planningService
+                .GenerateDailyPlanAsync(dailyPrompt);
+
+            var existingTaskTitles = existingTasks
+                .Where(x => !string.IsNullOrWhiteSpace(x.Title))
+                .Select(x => x.Title.Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var dedupedSuggestions = suggestions
+                .Where(x => !existingTaskTitles.Contains(x.Title?.Trim() ?? string.Empty))
+                .ToList();
+
+            return Ok(dedupedSuggestions);
         }
 
         [HttpPost("generate-weekly-plan")]
         public async Task<IActionResult> GenerateWeeklyPlan(
      [FromBody] GenerateWeeklyPlanRequest request)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var currentUser = await _userRepository.GetAsync(Guid.Parse(userId));
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            if (currentUser.FamilyId == null)
+                return BadRequest("User has no family.");
+
             if (string.IsNullOrWhiteSpace(request.Prompt))
             {
                 return BadRequest(
                     "Please describe what's happening this week.");
             }
 
+            var weekStartDate = (request.WeekStartDate ?? DateTime.UtcNow).Date;
+            var weekEndDate = weekStartDate.AddDays(6);
+
+            var existingTasks = await _taskRepository.GetByFamilyIdAsync(
+                currentUser.FamilyId.Value,
+                weekStartDate,
+                weekEndDate);
+
+            var weeklyPrompt = BuildWeeklyPlanPrompt(
+                request.Prompt.Trim(),
+                weekStartDate,
+                weekEndDate,
+                existingTasks);
+
             var suggestions = await _planningService
-                .GenerateWeeklyPlanAsync(request.Prompt);
+                .GenerateWeeklyPlanAsync(weeklyPrompt);
 
             return Ok(suggestions);
         }
@@ -456,6 +517,102 @@ namespace MentalLoadDistributor.Controllers
                 Message = isNewPlan
                     ? "Initial approved plan saved."
                     : "Existing approved plan updated."
+            });
+        }
+
+
+
+        [HttpPost("approve-adhoc-suggestions")]
+        public async Task<IActionResult> ApproveAdhocSuggestions(
+            [FromBody] ApproveSuggestionsRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var currentUser = await _userRepository.GetAsync(Guid.Parse(userId));
+
+            if (currentUser?.FamilyId == null)
+                return BadRequest("User has no family.");
+
+            if (request?.Suggestions == null || request.Suggestions.Count == 0)
+                return BadRequest("No suggestions were provided.");
+
+            var createdCount = 0;
+            var rescheduledCount = 0;
+            var processedTaskIds = new HashSet<Guid>();
+            var processedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var suggestion in request.Suggestions)
+            {
+                var dueDate = (suggestion.StartDate ?? DateTime.UtcNow).Date;
+
+                if (suggestion.TaskId.HasValue)
+                {
+                    var taskId = suggestion.TaskId.Value;
+
+                    if (!processedTaskIds.Add(taskId))
+                    {
+                        continue;
+                    }
+
+                    var existingTask = await _taskRepository.GetAsync(taskId);
+
+                    if (existingTask == null)
+                    {
+                        return BadRequest(
+                            $"A suggestion references a task that does not exist: {taskId}");
+                    }
+
+                    if (existingTask.FamilyId != currentUser.FamilyId.Value)
+                    {
+                        return BadRequest(
+                            $"A suggestion references a task outside the user's family: {taskId}");
+                    }
+
+                    existingTask.DueDate = dueDate;
+                    await _taskRepository.UpdateAsync(existingTask);
+                    rescheduledCount++;
+                    continue;
+                }
+
+                var dedupKey = $"{Normalize(suggestion.Title)}|{dueDate:yyyy-MM-dd}";
+
+                if (!processedKeys.Add(dedupKey))
+                {
+                    continue;
+                }
+
+                var task = new TaskItem
+                {
+                    Title = suggestion.Title,
+                    Description = suggestion.Description,
+                    CreatedById = currentUser.Id,
+                    DueDate = dueDate,
+                    Priority = suggestion.Priority,
+                    Status = TaskStatus.Pending,
+                    CreatedAt = DateTime.UtcNow,
+                    FamilyId = currentUser.FamilyId.Value,
+                    ApprovedPlanItemId = null,
+                    Category = ParseCategory(suggestion.Category),
+                    EstimatedMinutes = suggestion.EstimatedMinutes,
+                    MentalLoadEstimate = suggestion.EmotionalLoad,
+                    Recurrence = RecurrenceType.None,
+                    Tags = string.IsNullOrWhiteSpace(suggestion.Category)
+                        ? new List<string>()
+                        : new List<string> { suggestion.Category }
+                };
+
+                await _taskRepository.AddAsync(task);
+                createdCount++;
+            }
+
+            return Ok(new
+            {
+                CreatedTaskCount = createdCount,
+                RescheduledTaskCount = rescheduledCount,
+                Message = "Adhoc suggestions applied."
             });
         }
 
@@ -815,6 +972,84 @@ public async Task<IActionResult> DeleteApprovedPlanItem(Guid itemId)
             return string.IsNullOrWhiteSpace(value)
                 ? string.Empty
                 : value.Trim();
+        }
+
+        private static string BuildDailyPlanPrompt(
+            string userPrompt,
+            DateTime planDate,
+            IEnumerable<TaskItem> existingTasks)
+        {
+            var tasksForPrompt = existingTasks
+                .OrderBy(x => x.DueDate ?? planDate)
+                .ThenBy(x => x.Title)
+                .ToList();
+
+            var taskContext = tasksForPrompt.Count == 0
+                ? "No tasks exist yet for this date."
+                : string.Join(
+                    Environment.NewLine,
+                    tasksForPrompt.Select(task =>
+                        $"- {task.Title} | Status: {task.Status} | Category: {task.Category} | Priority: {task.Priority}"));
+
+            return $$"""
+Daily Planning Date: {{planDate:yyyy-MM-dd}}
+
+Existing Tasks For This Date:
+{{taskContext}}
+
+Ad hoc request from user:
+{{userPrompt}}
+
+Generate only additional ad hoc tasks for this date.
+Do not repeat or rename existing tasks.
+Prefer one-time tasks (Recurrence should be None unless user explicitly asks for a recurring item).
+""";
+        }
+
+        private static string BuildWeeklyPlanPrompt(
+            string userPrompt,
+            DateTime weekStartDate,
+            DateTime weekEndDate,
+            IEnumerable<TaskItem> existingTasks)
+        {
+            var tasksForPrompt = existingTasks
+                .OrderBy(x => x.DueDate ?? weekStartDate)
+                .ThenBy(x => x.Title)
+                .ToList();
+
+            var taskContext = tasksForPrompt.Count == 0
+                ? "No existing tasks found for this week."
+                : string.Join(
+                    Environment.NewLine,
+                    tasksForPrompt.Select(task =>
+                        $"- TaskId: {task.Id} | Title: {task.Title} | DueDate: {(task.DueDate.HasValue ? task.DueDate.Value.ToString("yyyy-MM-dd") : "none")} | Status: {task.Status} | Priority: {task.Priority} | Category: {task.Category} | Recurrence: {task.Recurrence}"));
+
+            return $$"""
+Weekly Planning Range: {{weekStartDate:yyyy-MM-dd}} to {{weekEndDate:yyyy-MM-dd}}
+
+Existing Tasks In This Week:
+{{taskContext}}
+
+User request:
+{{userPrompt}}
+
+Return a task suggestion list for this week where:
+- New tasks can be added.
+- Existing tasks can be rescheduled only when the user explicitly asks to move/reschedule/postpone/shift an existing task.
+- For explicit reschedule intent, match the correct existing task from the list and return that exact TaskId with a new StartDate.
+- For existing tasks being rescheduled, keep all other fields aligned with the existing task and only change the date.
+- For new tasks, TaskId must be null.
+
+Strict decision rules:
+- If intent is unclear, default to creating a new task (TaskId must be null).
+- Do not guess TaskId for ambiguous text.
+- Never return TaskId for brand-new tasks.
+
+Examples:
+- "Move laundry to Friday" => reschedule existing "laundry" task with TaskId and new StartDate.
+- "Add meal prep for Thursday" => new task with TaskId null.
+- "Week looks busy" => suggest helpful new tasks only; no reschedule unless explicitly requested.
+""";
         }
 
 

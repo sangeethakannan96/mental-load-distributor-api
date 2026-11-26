@@ -138,6 +138,12 @@ Current Household Plan:
 
                             properties = new
                             {
+                                taskId = new
+                                {
+                                    type = new[] { "string", "null" },
+                                    format = "uuid"
+                                },
+
                                 title = new
                                 {
                                     type = "string"
@@ -193,6 +199,7 @@ Current Household Plan:
 
                             required = new[]
                             {
+                        "taskId",
                         "title",
                         "description",
                         "category",

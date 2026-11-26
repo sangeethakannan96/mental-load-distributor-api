@@ -4,6 +4,8 @@ namespace MentalLoadDistributor.Core.Domain.Models.AI
 {
     public class SuggestedTask
     {
+        public Guid? TaskId { get; set; }
+
         public string Title { get; set; }
 
         public string Description { get; set; }

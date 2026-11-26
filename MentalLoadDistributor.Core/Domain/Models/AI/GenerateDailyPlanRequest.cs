@@ -9,5 +9,7 @@ namespace MentalLoadDistributor.Core.Domain.Models.AI
     public class GenerateDailyPlanRequest
     {
         public string Prompt { get; set; } = string.Empty;
+
+        public DateTime? PlanDate { get; set; }
     }
 }
